@@ -1,0 +1,250 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-chart-bar me-2"></i>Reports & Analytics</h2>
+    <div>
+        <button class="btn btn-outline-secondary btn-print me-2">
+            <i class="fas fa-print me-1"></i>Print Report
+        </button>
+        <button class="btn btn-outline-secondary btn-export">
+            <i class="fas fa-download me-1"></i>Export Data
+        </button>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-rupee-sign fa-2x mb-2"></i>
+                <h5>Total Sales</h5>
+                <h3>₹{{totalSales}}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-weight fa-2x mb-2"></i>
+                <h5>Total Quantity</h5>
+                <h3>{{totalQuantity}} kg</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-shopping-cart fa-2x mb-2"></i>
+                <h5>Total Orders</h5>
+                <h3>{{totalSalesCount}}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-cookie-bite fa-2x mb-2"></i>
+                <h5>Products</h5>
+                <h3>{{products.length}}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Sales by Product -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Sales by Product</h5>
+            </div>
+            <div class="card-body">
+                {{#if salesByProduct}}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Amount</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each salesByProduct}}
+                            <tr>
+                                <td>{{@key}}</td>
+                                <td>{{this.quantity}} kg</td>
+                                <td>₹{{this.amount}}</td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar" role="progressbar" 
+                                             style="width: {{percentage}}%">
+                                            {{percentage}}%
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+                {{else}}
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-chart-pie fa-2x mb-2"></i>
+                    <p>No sales data available</p>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stock Status -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-boxes me-2"></i>Stock Status</h5>
+            </div>
+            <div class="card-body">
+                {{#if stock.length}}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Stock</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each stock}}
+                            <tr>
+                                <td>{{this.name}}</td>
+                                <td>{{this.quantity}} {{this.unit}}</td>
+                                <td>
+                                    {{#if (lt this.quantity 10)}}
+                                        <span class="badge bg-danger">Low</span>
+                                    {{else if (lt this.quantity 50)}}
+                                        <span class="badge bg-warning">Medium</span>
+                                    {{else}}
+                                        <span class="badge bg-success">Good</span>
+                                    {{/if}}
+                                </td>
+                            </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+                {{else}}
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-boxes fa-2x mb-2"></i>
+                    <p>No stock data available</p>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Sales -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Sales</h5>
+            </div>
+            <div class="card-body">
+                {{#if sales.length}}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Products</th>
+                                <th>Total Quantity</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each sales}}
+                            <tr>
+                                <td>{{this.date}}</td>
+                                <td>{{this.customerName}}</td>
+                                <td>{{this.productName}}</td>
+                                <td>{{this.quantity}} kg</td>
+                                <td><strong>₹{{this.totalAmount}}</strong></td>
+                            </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+                {{else}}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-shopping-cart fa-3x mb-3"></i>
+                    <h4>No sales data available</h4>
+                    <p>Start making sales to see analytics here.</p>
+                    <a href="/sales/add" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Add First Sale
+                    </a>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Business Insights -->
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Top Product</h5>
+            </div>
+            <div class="card-body text-center">
+                {{#if topProduct}}
+                <h4>{{topProduct.name}}</h4>
+                <p class="text-muted">{{topProduct.quantity}} kg sold</p>
+                <span class="badge bg-success fs-6">₹{{topProduct.amount}}</span>
+                {{else}}
+                <i class="fas fa-chart-line fa-2x text-muted mb-2"></i>
+                <p class="text-muted">No data available</p>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-calendar me-2"></i>Average Order</h5>
+            </div>
+            <div class="card-body text-center">
+                {{#if averageOrder}}
+                <h4>₹{{averageOrder.amount}}</h4>
+                <p class="text-muted">{{averageOrder.quantity}} kg average</p>
+                {{else}}
+                <i class="fas fa-calculator fa-2x text-muted mb-2"></i>
+                <p class="text-muted">No data available</p>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Low Stock Alert</h5>
+            </div>
+            <div class="card-body text-center">
+                {{#if lowStockItems.length}}
+                <h4>{{lowStockItems.length}}</h4>
+                <p class="text-muted">Items need restocking</p>
+                <a href="/stock" class="btn btn-warning btn-sm">Manage Stock</a>
+                {{else}}
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <p class="text-success">All items well stocked</p>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+</div>

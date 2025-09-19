@@ -1,0 +1,125 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-users me-2"></i>Employee Management</h2>
+    <a href="/employees/add" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i>Add New Employee
+    </a>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control search-input" placeholder="Search employees...">
+        </div>
+    </div>
+    <div class="col-md-6 text-end">
+        <a href="/employees/salary" class="btn btn-outline-success">
+            <i class="fas fa-money-bill-wave me-1"></i>Salary Reports
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {{#if employees.length}}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Role</th>
+                        <th>Joining Date</th>
+                        <th>Basic Salary</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each employees}}
+                    <tr>
+                        <td>
+                            <strong>{{this.name}}</strong>
+                            {{#if this.phone}}
+                            <br><small class="text-muted">{{this.phone}}</small>
+                            {{/if}}
+                        </td>
+                        <td>{{this.role}}</td>
+                        <td>{{formatDate this.joiningDate}}</td>
+                        <td>₹{{this.basicSalary}}</td>
+                        <td>
+                            {{#if this.isActive}}
+                                <span class="badge bg-success">Active</span>
+                            {{else}}
+                                <span class="badge bg-danger">Inactive</span>
+                            {{/if}}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="/employees/edit/{{this._id}}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                
+                                <a href="/employees/salary/{{this._id}}" class="btn btn-sm btn-outline-success" title="Salary Details">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </a>
+                                <form method="POST" action="/employees/delete/{{this._id}}" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger btn-delete" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+        {{else}}
+        <div class="text-center py-5">
+            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No employees found</h4>
+            <p class="text-muted">Start by adding your first employee.</p>
+            <a href="/employees/add" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Add First Employee
+            </a>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+{{#if employees.length}}
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h5>Total Employees</h5>
+                <h3>{{employees.length}}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h5>Active</h5>
+                <h3>{{activeCount}}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h5>Average Salary</h5>
+                <h3>₹{{averageSalary}}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h5>Total Monthly Payroll</h5>
+                <h3>₹{{totalPayroll}}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+{{/if}}

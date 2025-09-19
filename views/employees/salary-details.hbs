@@ -1,0 +1,171 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-money-bill-wave me-2"></i>Salary Details - {{employee.name}}</h2>
+    <a href="/employees" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Back to Employees
+    </a>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h5>Basic Salary</h5>
+                <h3>₹{{employee.basicSalary}}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h5>Total Paid</h5>
+                <h3>₹{{totalSalaryPaid}}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h5>Total Advances</h5>
+                <h3>₹{{totalAdvances}}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <h5>Pending</h5>
+                <h3>₹{{pendingAdvances}}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Salary History</h5>
+            </div>
+            <div class="card-body">
+                {{#if salaries.length}}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Month/Year</th>
+                                <th>Present</th>
+                                <th>Absent</th>
+                                <th>Half Days</th>
+                                <th>Calculated</th>
+                                <th>Advances</th>
+                                <th>Net Salary</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each salaries}}
+                            <tr>
+                                <td>{{this.month}}/{{this.year}}</td>
+                                <td><span class="badge bg-success">{{this.presentDays}}</span></td>
+                                <td><span class="badge bg-danger">{{this.absentDays}}</span></td>
+                                <td><span class="badge bg-warning">{{this.halfDays}}</span></td>
+                                <td>₹{{this.calculatedSalary}}</td>
+                                <td>₹{{this.advanceDeductions}}</td>
+                                <td><strong>₹{{this.netSalary}}</strong></td>
+                                <td>
+                                    {{#if (eq this.status "paid")}}
+                                        <span class="badge bg-success">Paid</span>
+                                    {{else}}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {{/if}}
+                                </td>
+                            </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+                {{else}}
+                <div class="text-center py-3">
+                    <i class="fas fa-calculator fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">No salary records found</p>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Advance Payment History</h5>
+            </div>
+            <div class="card-body">
+                {{#if advances.length}}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{#each advances}}
+                            <tr>
+                                <td>{{formatDate this.date}}</td>
+                                <td><strong>₹{{this.amount}}</strong></td>
+                                <td>{{#if this.reason}}{{this.reason}}{{else}}<span class="text-muted">No reason</span>{{/if}}</td>
+                                <td>
+                                    {{#if this.isDeducted}}
+                                        <span class="badge bg-success">Deducted</span>
+                                    {{else}}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {{/if}}
+                                </td>
+                            </tr>
+                            {{/each}}
+                        </tbody>
+                    </table>
+                </div>
+                {{else}}
+                <div class="text-center py-3">
+                    <i class="fas fa-hand-holding-usd fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">No advance payments found</p>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Employee Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Name:</strong> {{employee.name}}</p>
+                        <p><strong>Role:</strong> {{employee.role}}</p>
+                        <p><strong>Joining Date:</strong> {{formatDate employee.joiningDate}}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Phone:</strong> {{#if employee.phone}}{{employee.phone}}{{else}}<span class="text-muted">Not provided</span>{{/if}}</p>
+                        <p><strong>Address:</strong> {{#if employee.address}}{{employee.address}}{{else}}<span class="text-muted">Not provided</span>{{/if}}</p>
+                        <p><strong>Status:</strong> 
+                            {{#if employee.isActive}}
+                                <span class="badge bg-success">Active</span>
+                            {{else}}
+                                <span class="badge bg-danger">Inactive</span>
+                            {{/if}}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

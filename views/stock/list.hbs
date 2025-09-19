@@ -1,0 +1,131 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-boxes me-2"></i>Stock Management</h2>
+    <a href="/stock/add" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i>Add Stock Item
+    </a>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control search-input" placeholder="Search stock items...">
+        </div>
+    </div>
+    <div class="col-md-6 text-end">
+        <button class="btn btn-outline-secondary btn-export">
+            <i class="fas fa-download me-1"></i>Export CSV
+        </button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {{#if stock.length}}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Current Stock</th>
+                        <th>Unit</th>
+                        <th>Last Updated</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each stock}}
+                    <tr>
+                        <td>
+                            <strong>{{this.name}}</strong>
+                            {{#if this.description}}
+                            <br><small class="text-muted">{{this.description}}</small>
+                            {{/if}}
+                        </td>
+                        <td>
+                            <span class="badge {{#if (lt this.quantity 10)}}bg-danger{{else if (lt this.quantity 50)}}bg-warning{{else}}bg-success{{/if}} fs-6">
+                                {{this.quantity}}
+                            </span>
+                        </td>
+                        <td>{{this.unit}}</td>
+                        <td>{{formatDate this.lastUpdated}}</td>
+                        <td>
+                            {{#if (lt this.quantity 10)}}
+                                <span class="badge bg-danger">Low Stock</span>
+                            {{else if (lt this.quantity 50)}}
+                                <span class="badge bg-warning">Medium Stock</span>
+                            {{else}}
+                                <span class="badge bg-success">Good Stock</span>
+                            {{/if}}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="/stock/edit/{{this.id}}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="POST" action="/stock/delete/{{this.id}}" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger btn-delete" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+        {{else}}
+        <div class="text-center py-5">
+            <i class="fas fa-boxes fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No stock items found</h4>
+            <p class="text-muted">Start by adding your first stock item.</p>
+            <a href="/stock/add" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Add First Stock Item
+            </a>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+{{#if stock.length}}
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h5>Good Stock</h5>
+                <h3>{{goodStockCount}}</h3>
+                <small>Items with >50 units</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h5>Medium Stock</h5>
+                <h3>{{mediumStockCount}}</h3>
+                <small>Items with 10-50 units</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <h5>Low Stock</h5>
+                <h3>{{lowStockCount}}</h3>
+                <small>Items with <10 units</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h5>Total Items</h5>
+                <h3>{{stock.length}}</h3>
+                <small>Stock categories</small>
+            </div>
+        </div>
+    </div>
+</div>
+{{/if}}

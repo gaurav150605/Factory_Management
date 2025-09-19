@@ -1,0 +1,163 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-edit me-2"></i>Edit Product</h2>
+    <a href="/products" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Back to Products
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Edit Product Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/products/edit/{{product.id}}" class="needs-validation form-with-loading" novalidate>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">Product Name *</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   value="{{product.name}}" required>
+                            <div class="invalid-feedback">
+                                Please enter product name.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="price" class="form-label">Price per Unit *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control currency-input" id="price" name="price" 
+                                       step="0.01" min="0" value="{{product.price}}" required>
+                            </div>
+                            <div class="invalid-feedback">
+                                Please enter a valid price.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="unit" class="form-label">Unit *</label>
+                            <select class="form-select" id="unit" name="unit" required>
+                                <option value="">Select unit</option>
+                                <option value="kg" {{#if (eq product.unit "kg")}}selected{{/if}}>Kilograms (kg)</option>
+                                <option value="pieces" {{#if (eq product.unit "pieces")}}selected{{/if}}>Pieces</option>
+                                <option value="boxes" {{#if (eq product.unit "boxes")}}selected{{/if}}>Boxes</option>
+                                <option value="packets" {{#if (eq product.unit "packets")}}selected{{/if}}>Packets</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a unit.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="">Select category</option>
+                                <option value="traditional" {{#if (eq product.category "traditional")}}selected{{/if}}>Traditional</option>
+                                <option value="premium" {{#if (eq product.category "premium")}}selected{{/if}}>Premium</option>
+                                <option value="special" {{#if (eq product.category "special")}}selected{{/if}}>Special</option>
+                                <option value="seasonal" {{#if (eq product.category "seasonal")}}selected{{/if}}>Seasonal</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" 
+                                  placeholder="Describe the product, ingredients, special features...">{{product.description}}</textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/products" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Update Product
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Product Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Product ID:</strong>
+                    <span class="text-muted">{{product.id}}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Created:</strong>
+                    <span class="text-muted">{{formatDate product.createdAt}}</span>
+                </div>
+                {{#if product.updatedAt}}
+                <div class="mb-3">
+                    <strong>Last Updated:</strong>
+                    <span class="text-muted">{{formatDate product.updatedAt}}</span>
+                </div>
+                {{/if}}
+                <div class="mb-3">
+                    <strong>Current Price:</strong>
+                    <span class="badge bg-primary fs-6">₹{{product.price}}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Sales Performance</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center text-muted">
+                    <i class="fas fa-chart-line fa-2x mb-2"></i>
+                    <p>Sales analytics will be available in future updates.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-info" onclick="duplicateProduct()">
+                        <i class="fas fa-copy me-1"></i>Duplicate Product
+                    </button>
+                    <button class="btn btn-outline-warning" onclick="adjustPrice()">
+                        <i class="fas fa-tags me-1"></i>Adjust Price
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function duplicateProduct() {
+    if (confirm('Create a copy of this product?')) {
+        const name = document.getElementById('name').value;
+        document.getElementById('name').value = name + ' (Copy)';
+        showNotification('Product duplicated. Please review and save.', 'info');
+    }
+}
+
+function adjustPrice() {
+    const currentPrice = parseFloat(document.getElementById('price').value);
+    const adjustment = prompt('Enter new price:');
+    
+    if (adjustment && !isNaN(adjustment)) {
+        const newPrice = parseFloat(adjustment);
+        if (newPrice >= 0) {
+            document.getElementById('price').value = newPrice;
+            showNotification(`Price updated to ₹${newPrice}`, 'success');
+        } else {
+            showNotification('Price cannot be negative', 'error');
+        }
+    }
+}
+</script>

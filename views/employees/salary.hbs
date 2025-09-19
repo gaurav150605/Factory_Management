@@ -1,0 +1,212 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-money-bill-wave me-2"></i>Salary Management</h2>
+    <a href="/employees" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Back to Employees
+    </a>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Calculate Monthly Salary</h5>
+                <form method="POST" action="/employees/salary/calculate" class="needs-validation" novalidate>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="month" class="form-label">Month</label>
+                            <select class="form-select" id="month" name="month" required>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="year" class="form-label">Year</label>
+                            <input type="number" class="form-control" id="year" name="year" 
+                                   value="{{currentYear}}" min="2020" max="2030" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-calculator me-1"></i>Calculate Salaries
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Current Month: {{currentMonth}}/{{currentYear}}</h5>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary">{{salaries.length}}</h4>
+                        <small class="text-muted">Employees</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">₹{{totalSalary}}</h4>
+                        <small class="text-muted">Total Payroll</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Salary Records - {{currentMonth}}/{{currentYear}}</h5>
+    </div>
+    <div class="card-body">
+        {{#if salaries.length}}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Basic Salary</th>
+                        <th>Present Days</th>
+                        <th>Absent Days</th>
+                        <th>Half Days</th>
+                        <th>Calculated Salary</th>
+                        <th>Advance Deductions</th>
+                        <th>Net Salary</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each salaries}}
+                    <tr>
+                        <td>
+                            <strong>{{this.employeeId.name}}</strong><br>
+                            <small class="text-muted">{{this.employeeId.role}}</small>
+                        </td>
+                        <td>₹{{this.basicSalary}}</td>
+                        <td>
+                            <span class="badge bg-success">{{this.presentDays}}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-danger">{{this.absentDays}}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-warning">{{this.halfDays}}</span>
+                        </td>
+                        <td>₹{{this.calculatedSalary}}</td>
+                        <td>₹{{this.advanceDeductions}}</td>
+                        <td>
+                            <strong class="text-primary">₹{{this.netSalary}}</strong>
+                        </td>
+                        <td>
+                            {{#if (eq this.status "paid")}}
+                                <span class="badge bg-success">Paid</span>
+                            {{else}}
+                                <span class="badge bg-warning">Pending</span>
+                            {{/if}}
+                        </td>
+                        <td>
+                            {{#if (eq this.status "pending")}}
+                                <button class="btn btn-sm btn-success" onclick="markAsPaid('{{this._id}}')">
+                                    <i class="fas fa-check me-1"></i>Mark Paid
+                                </button>
+                            {{else}}
+                                <span class="text-muted">Paid on {{formatDate this.paidDate}}</span>
+                            {{/if}}
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+        {{else}}
+        <div class="text-center py-5">
+            <i class="fas fa-calculator fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No salary records found</h4>
+            <p class="text-muted">Calculate salaries for the current month to see records here.</p>
+            <button class="btn btn-primary" onclick="calculateCurrentMonth()">
+                <i class="fas fa-calculator me-1"></i>Calculate Current Month
+            </button>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+{{#if salaries.length}}
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h5>Total Employees</h5>
+                <h3>{{salaries.length}}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h5>Total Payroll</h5>
+                <h3>₹{{totalSalary}}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h5>Average Salary</h5>
+                <h3>₹{{averageSalary}}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+{{/if}}
+
+<script>
+function calculateCurrentMonth() {
+    const currentDate = new Date();
+    const month = currentDate.getMonth() + 1;
+    const year = currentDate.getFullYear();
+    
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/employees/salary/calculate';
+    
+    const monthInput = document.createElement('input');
+    monthInput.type = 'hidden';
+    monthInput.name = 'month';
+    monthInput.value = month;
+    
+    const yearInput = document.createElement('input');
+    yearInput.type = 'hidden';
+    yearInput.name = 'year';
+    yearInput.value = year;
+    
+    form.appendChild(monthInput);
+    form.appendChild(yearInput);
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function markAsPaid(salaryId) {
+    if (confirm('Mark this salary as paid?')) {
+        // This would need a separate route to mark salary as paid
+        alert('Salary marked as paid! (Feature to be implemented)');
+    }
+}
+
+// Set current month as default
+document.addEventListener('DOMContentLoaded', function() {
+    const currentDate = new Date();
+    const monthSelect = document.getElementById('month');
+    if (monthSelect) {
+        monthSelect.value = currentDate.getMonth() + 1;
+    }
+});
+</script>

@@ -1,0 +1,374 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-plus-circle me-2"></i>Add New Sale (Multiple Products)</h2>
+    <a href="/sales" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Back to Sales
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Sale Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/sales/add-multiple" class="needs-validation form-with-loading" novalidate>
+                    <!-- Customer Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-user me-2"></i>Customer Information
+                            </h6>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="customerName" class="form-label">Customer Name *</label>
+                            <input type="text" class="form-control" id="customerName" name="customerName" required>
+                            <div class="invalid-feedback">
+                                Please enter customer name.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="customerPhone" class="form-label">Customer Phone</label>
+                            <input type="tel" class="form-control" id="customerPhone" name="customerPhone" pattern="[0-9]{10}">
+                            <div class="invalid-feedback">
+                                Please enter a valid 10-digit phone number.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="customerEmail" class="form-label">Customer Email</label>
+                            <input type="email" class="form-control" id="customerEmail" name="customerEmail">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="customerAddress" class="form-label">Customer Address</label>
+                            <textarea class="form-control" id="customerAddress" name="customerAddress" rows="2"></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Products Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-shopping-cart me-2"></i>Products
+                            </h6>
+                        </div>
+                        <div class="col-12">
+                            <div id="products-container">
+                                <div class="product-row row mb-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Product *</label>
+                                        <select class="form-select product-select" name="products[0][productId]" required>
+                                            <option value="">Select a product</option>
+                                            {{#each products}}
+                                            <option value="{{this.id}}" data-price="{{this.price}}">{{this.name}} - ₹{{this.price}}/kg</option>
+                                            {{/each}}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Quantity *</label>
+                                        <input type="number" class="form-control quantity-input" name="products[0][quantity]" 
+                                               step="0.001" min="0.001" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Price</label>
+                                        <input type="number" class="form-control price-input" name="products[0][price]" 
+                                               step="0.01" min="0" readonly>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Total</label>
+                                        <input type="number" class="form-control total-input" name="products[0][totalAmount]" 
+                                               step="0.01" min="0" readonly>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="button" class="btn btn-danger btn-sm remove-product" style="display: none;">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="add-product">
+                                <i class="fas fa-plus me-1"></i>Add Another Product
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-credit-card me-2"></i>Payment Information
+                            </h6>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="subtotal" class="form-label">Subtotal</label>
+                            <input type="number" class="form-control" id="subtotal" name="subtotal" readonly>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="discount" class="form-label">Discount (₹)</label>
+                            <input type="number" class="form-control" id="discount" name="discount" 
+                                   step="0.01" min="0" value="0">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="tax" class="form-label">Tax (₹)</label>
+                            <input type="number" class="form-control" id="tax" name="tax" 
+                                   step="0.01" min="0" value="0">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="paymentMethod" class="form-label">Payment Method</label>
+                            <select class="form-select" id="paymentMethod" name="paymentMethod">
+                                <option value="cash">Cash</option>
+                                <option value="card">Card</option>
+                                <option value="upi">UPI</option>
+                                <option value="cheque">Cheque</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="totalAmount" class="form-label">Total Amount</label>
+                            <input type="number" class="form-control" id="totalAmount" name="totalAmount" readonly>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Information -->
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label for="date" class="form-label">Sale Date</label>
+                            <input type="date" class="form-control" id="date" name="date">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="2" 
+                                      placeholder="Additional notes..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/sales" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Save Sale
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Sale Summary</h5>
+            </div>
+            <div class="card-body">
+                <div id="sale-summary">
+                    <div class="mb-3">
+                        <strong>Customer:</strong>
+                        <span id="summary-customer" class="text-muted">Not entered</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Products:</strong>
+                        <span id="summary-products" class="text-muted">0 items</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Subtotal:</strong>
+                        <span id="summary-subtotal" class="text-muted">₹0</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Discount:</strong>
+                        <span id="summary-discount" class="text-muted">₹0</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Tax:</strong>
+                        <span id="summary-tax" class="text-muted">₹0</span>
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <strong>Total Amount:</strong>
+                        <span id="summary-total" class="text-primary fs-5">₹0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Available Products</h5>
+            </div>
+            <div class="card-body">
+                {{#each products}}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <strong>{{this.name}}</strong><br>
+                        <small class="text-muted">{{this.description}}</small>
+                    </div>
+                    <span class="badge bg-primary">₹{{this.price}}/kg</span>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let productIndex = 0;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Set today's date as default
+    const dateInput = document.getElementById('date');
+    if (!dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+    
+    // Add event listeners
+    document.getElementById('add-product').addEventListener('click', addProductRow);
+    document.getElementById('customerName').addEventListener('input', updateSummary);
+    document.getElementById('discount').addEventListener('input', calculateTotal);
+    document.getElementById('tax').addEventListener('input', calculateTotal);
+    
+    // Initial calculation
+    calculateTotal();
+});
+
+function addProductRow() {
+    productIndex++;
+    const container = document.getElementById('products-container');
+    const newRow = document.createElement('div');
+    newRow.className = 'product-row row mb-3';
+    newRow.innerHTML = `
+        <div class="col-md-4">
+            <label class="form-label">Product *</label>
+            <select class="form-select product-select" name="products[${productIndex}][productId]" required>
+                <option value="">Select a product</option>
+                {{#each products}}
+                <option value="{{this.id}}" data-price="{{this.price}}">{{this.name}} - ₹{{this.price}}/kg</option>
+                {{/each}}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Quantity *</label>
+            <input type="number" class="form-control quantity-input" name="products[${productIndex}][quantity]" 
+                   step="0.001" min="0.001" required>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Price</label>
+            <input type="number" class="form-control price-input" name="products[${productIndex}][price]" 
+                   step="0.01" min="0" readonly>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Total</label>
+            <input type="number" class="form-control total-input" name="products[${productIndex}][totalAmount]" 
+                   step="0.01" min="0" readonly>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">&nbsp;</label>
+            <button type="button" class="btn btn-danger btn-sm remove-product">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    
+    container.appendChild(newRow);
+    
+    // Add event listeners to new row
+    const select = newRow.querySelector('.product-select');
+    const quantityInput = newRow.querySelector('.quantity-input');
+    const priceInput = newRow.querySelector('.price-input');
+    const totalInput = newRow.querySelector('.total-input');
+    const removeBtn = newRow.querySelector('.remove-product');
+    
+    select.addEventListener('change', function() {
+        const price = this.options[this.selectedIndex].dataset.price;
+        priceInput.value = price || 0;
+        calculateRowTotal(newRow);
+        calculateTotal();
+    });
+    
+    quantityInput.addEventListener('input', function() {
+        calculateRowTotal(newRow);
+        calculateTotal();
+    });
+    
+    removeBtn.addEventListener('click', function() {
+        newRow.remove();
+        calculateTotal();
+        updateRemoveButtons();
+    });
+    
+    updateRemoveButtons();
+}
+
+function calculateRowTotal(row) {
+    const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;
+    const price = parseFloat(row.querySelector('.price-input').value) || 0;
+    const total = quantity * price;
+    
+    row.querySelector('.total-input').value = total.toFixed(2);
+}
+
+function calculateTotal() {
+    const rows = document.querySelectorAll('.product-row');
+    let subtotal = 0;
+    let productCount = 0;
+    
+    rows.forEach(row => {
+        const total = parseFloat(row.querySelector('.total-input').value) || 0;
+        subtotal += total;
+        
+        const productId = row.querySelector('.product-select').value;
+        if (productId) productCount++;
+    });
+    
+    const discount = parseFloat(document.getElementById('discount').value) || 0;
+    const tax = parseFloat(document.getElementById('tax').value) || 0;
+    const totalAmount = subtotal - discount + tax;
+    
+    // Update form fields
+    document.getElementById('subtotal').value = subtotal.toFixed(2);
+    document.getElementById('totalAmount').value = totalAmount.toFixed(2);
+    
+    // Update summary
+    document.getElementById('summary-products').textContent = `${productCount} items`;
+    document.getElementById('summary-subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById('summary-discount').textContent = `₹${discount.toFixed(2)}`;
+    document.getElementById('summary-tax').textContent = `₹${tax.toFixed(2)}`;
+    document.getElementById('summary-total').textContent = `₹${totalAmount.toFixed(2)}`;
+}
+
+function updateSummary() {
+    const customerName = document.getElementById('customerName').value;
+    document.getElementById('summary-customer').textContent = customerName || 'Not entered';
+}
+
+function updateRemoveButtons() {
+    const rows = document.querySelectorAll('.product-row');
+    rows.forEach((row, index) => {
+        const removeBtn = row.querySelector('.remove-product');
+        removeBtn.style.display = rows.length > 1 ? 'block' : 'none';
+    });
+}
+
+// Add event listeners to existing row
+document.addEventListener('DOMContentLoaded', function() {
+    const firstRow = document.querySelector('.product-row');
+    if (firstRow) {
+        const select = firstRow.querySelector('.product-select');
+        const quantityInput = firstRow.querySelector('.quantity-input');
+        
+        select.addEventListener('change', function() {
+            const price = this.options[this.selectedIndex].dataset.price;
+            firstRow.querySelector('.price-input').value = price || 0;
+            calculateRowTotal(firstRow);
+            calculateTotal();
+        });
+        
+        quantityInput.addEventListener('input', function() {
+            calculateRowTotal(firstRow);
+            calculateTotal();
+        });
+        
+        updateRemoveButtons();
+    }
+});
+</script>

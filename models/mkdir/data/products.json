@@ -1,0 +1,42 @@
+[
+  {
+    "id": "d436521f-fc56-4f93-b443-00cfbbe33862",
+    "name": "Dharawadi pedha",
+    "price": 320,
+    "unit": "kg",
+    "description": "",
+    "createdAt": "2025-09-14T18:41:31.732Z"
+  },
+  {
+    "id": "a7d8840f-2276-4cea-9159-e66ae29ce2a9",
+    "name": "Barfi",
+    "price": 320,
+    "unit": "kg",
+    "description": "",
+    "createdAt": "2025-09-14T18:41:59.933Z"
+  },
+  {
+    "id": "ca5ef242-3b53-4a6b-af2c-b7be82427ea5",
+    "name": "ABC",
+    "price": 600,
+    "unit": "kg",
+    "description": "",
+    "createdAt": "2025-09-18T05:42:31.551Z"
+  },
+  {
+    "id": "991171ce-856a-4fec-b3a0-ed7c11713dd6",
+    "name": "kesar pedha",
+    "price": 320,
+    "unit": "kg",
+    "description": "",
+    "createdAt": "2025-09-18T05:42:57.720Z"
+  },
+  {
+    "id": "406261b6-829c-471a-be9f-e4f5bbea1f87",
+    "name": "15\\25",
+    "price": 160,
+    "unit": "kg",
+    "description": "",
+    "createdAt": "2025-09-18T05:43:18.690Z"
+  }
+]

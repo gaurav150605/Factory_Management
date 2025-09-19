@@ -1,0 +1,150 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-plus-circle me-2"></i>Add New Product</h2>
+    <a href="/products" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Back to Products
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Product Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/products/add" class="needs-validation form-with-loading" novalidate>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">Product Name *</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                            <div class="invalid-feedback">
+                                Please enter product name.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="price" class="form-label">Price per Unit *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control currency-input" id="price" name="price" 
+                                       step="0.01" min="0" required>
+                            </div>
+                            <div class="invalid-feedback">
+                                Please enter a valid price.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="unit" class="form-label">Unit *</label>
+                            <select class="form-select" id="unit" name="unit" required>
+                                <option value="">Select unit</option>
+                                <option value="kg">Kilograms (kg)</option>
+                                <option value="pieces">Pieces</option>
+                                <option value="boxes">Boxes</option>
+                                <option value="packets">Packets</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a unit.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="category" class="form-label">Category</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="">Select category</option>
+                                <option value="traditional">Traditional</option>
+                                <option value="premium">Premium</option>
+                                <option value="special">Special</option>
+                                <option value="seasonal">Seasonal</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" 
+                                  placeholder="Describe the product, ingredients, special features..."></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/products" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Save Product
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Product Guidelines</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6><i class="fas fa-info-circle text-info me-2"></i>Product Categories</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <span class="badge bg-primary me-2">Traditional</span>
+                            Classic pedha varieties
+                        </li>
+                        <li class="mb-2">
+                            <span class="badge bg-warning me-2">Premium</span>
+                            High-quality ingredients
+                        </li>
+                        <li class="mb-2">
+                            <span class="badge bg-success me-2">Special</span>
+                            Unique flavors
+                        </li>
+                        <li class="mb-2">
+                            <span class="badge bg-info me-2">Seasonal</span>
+                            Limited time products
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="fas fa-lightbulb text-warning me-2"></i>Tips</h6>
+                    <ul class="list-unstyled small">
+                        <li class="mb-1">• Use descriptive names</li>
+                        <li class="mb-1">• Set competitive prices</li>
+                        <li class="mb-1">• Include key ingredients</li>
+                        <li class="mb-1">• Mention special features</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Popular Pedha Types</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Kesar Pedha</strong><br>
+                    <small class="text-muted">Saffron-flavored premium pedha</small>
+                </div>
+                <div class="mb-2">
+                    <strong>Chocolate Pedha</strong><br>
+                    <small class="text-muted">Modern twist with chocolate</small>
+                </div>
+                <div class="mb-2">
+                    <strong>Plain Pedha</strong><br>
+                    <small class="text-muted">Traditional milk-based pedha</small>
+                </div>
+                <div class="mb-2">
+                    <strong>Dry Fruit Pedha</strong><br>
+                    <small class="text-muted">Enriched with nuts and dry fruits</small>
+                </div>
+                <div class="mb-2">
+                    <strong>Rose Pedha</strong><br>
+                    <small class="text-muted">Rose-flavored aromatic pedha</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

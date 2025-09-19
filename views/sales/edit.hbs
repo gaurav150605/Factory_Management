@@ -1,0 +1,169 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-edit me-2"></i>Edit Sale</h2>
+    <a href="/sales" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Back to Sales
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Edit Sale Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/sales/edit/{{sale.id}}" class="needs-validation form-with-loading" novalidate>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="productId" class="form-label">Product *</label>
+                            <select class="form-select" id="productId" name="productId" required>
+                                <option value="">Select a product</option>
+                                {{#each products}}
+                                <option value="{{this.id}}" data-price="{{this.price}}" 
+                                        {{#if (eq this.id ../sale.productId)}}selected{{/if}}>
+                                    {{this.name}} - ₹{{this.price}}/kg
+                                </option>
+                                {{/each}}
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a product.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="quantity" class="form-label">Quantity (kg) *</label>
+                            <input type="number" class="form-control quantity-input" id="quantity" name="quantity" 
+                                   step="0.001" min="0.001" value="{{sale.quantity}}" required>
+                            <div class="invalid-feedback">
+                                Please enter a valid quantity (minimum 0.001 kg).
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="customerName" class="form-label">Customer Name *</label>
+                            <input type="text" class="form-control" id="customerName" name="customerName" 
+                                   value="{{sale.customerName}}" required>
+                            <div class="invalid-feedback">
+                                Please enter customer name.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="customerPhone" class="form-label">Customer Phone *</label>
+                            <input type="tel" class="form-control" id="customerPhone" name="customerPhone" 
+                                   pattern="[0-9]{10}" value="{{sale.customerPhone}}" required>
+                            <div class="invalid-feedback">
+                                Please enter a valid 10-digit phone number.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="date" class="form-label">Sale Date</label>
+                            <input type="date" class="form-control" id="date" name="date" value="{{sale.date}}">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="totalAmount" class="form-label">Total Amount</label>
+                            <input type="text" class="form-control total-input" id="totalAmount" readonly 
+                                   value="{{sale.totalAmount}}">
+                            <small class="form-text text-muted">Calculated automatically</small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/sales" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Update Sale
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Sale Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Sale ID:</strong>
+                    <span class="text-muted">{{sale.id}}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Created:</strong>
+                    <span class="text-muted">{{sale.createdAt}}</span>
+                </div>
+                {{#if sale.updatedAt}}
+                <div class="mb-3">
+                    <strong>Last Updated:</strong>
+                    <span class="text-muted">{{sale.updatedAt}}</span>
+                </div>
+                {{/if}}
+                <hr>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-primary" onclick="generateInvoice('{{sale.id}}')">
+                        <i class="fas fa-file-pdf me-1"></i>Generate Invoice
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Current Sale Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Product:</strong>
+                    <span id="summary-product">{{sale.productName}}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Quantity:</strong>
+                    <span id="summary-quantity">{{sale.quantity}} kg</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Unit Price:</strong>
+                    <span id="summary-price">₹{{sale.price}}</span>
+                </div>
+                <hr>
+                <div class="mb-3">
+                    <strong>Total Amount:</strong>
+                    <span id="summary-total" class="text-primary fs-5">₹{{sale.totalAmount}}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const productSelect = document.getElementById('productId');
+    const quantityInput = document.getElementById('quantity');
+    const totalInput = document.getElementById('totalAmount');
+    
+    function updateSummary() {
+        const selectedOption = productSelect.options[productSelect.selectedIndex];
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const price = parseFloat(selectedOption.dataset.price) || 0;
+        const total = quantity * price;
+        
+        // Update summary
+        document.getElementById('summary-product').textContent = selectedOption.text || 'Not selected';
+        document.getElementById('summary-quantity').textContent = quantity + ' kg';
+        document.getElementById('summary-price').textContent = '₹' + price;
+        document.getElementById('summary-total').textContent = '₹' + total.toFixed(2);
+        
+        // Update total input
+        totalInput.value = total.toFixed(2);
+    }
+    
+    productSelect.addEventListener('change', updateSummary);
+    quantityInput.addEventListener('input', updateSummary);
+});
+</script>

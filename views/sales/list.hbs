@@ -1,0 +1,102 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-shopping-cart me-2"></i>Sales Management</h2>
+    <div>
+        <a href="/sales/add" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>Add Sale
+        </a>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control search-input" placeholder="Search sales...">
+        </div>
+    </div>
+    <div class="col-md-6 text-end">
+        <button class="btn btn-outline-secondary btn-export">
+            <i class="fas fa-download me-1"></i>Export CSV
+        </button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {{#if sales.length}}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Details</th>
+                        <th>Payment</th>
+                        <th>Total</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each sales}}
+                    <tr>
+                        <td>{{formatDate this.date 'YYYY-MM-DD'}}</td>
+                        <td>
+                            <strong>{{this.customerName}}</strong><br>
+                            <small class="text-muted">{{this.customerPhone}}</small>
+                        </td>
+                        <td>
+                            {{#if (eq this.type "multiple")}}
+                                {{this.productName}}
+                                <small class="text-muted d-block">{{this.items.length}} items</small>
+                            {{else}}
+                                <span class="text-muted">Simple Sale</span>
+                            {{/if}}
+                        </td>
+                        <td>{{this.paymentMethod}}</td>
+                        <td><strong>₹{{this.totalAmount}}</strong></td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-primary" onclick="generateInvoice('{{this._id}}')" title="Generate Invoice">
+                                    <i class="fas fa-file-pdf"></i>
+                                </button>
+                                <span class="text-muted small">Simple</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+        {{else}}
+        <div class="text-center py-5">
+            <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No sales found</h4>
+            <p class="text-muted">Start by adding your first sale.</p>
+            <a href="/sales/add" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Add First Sale
+            </a>
+        </div>
+        {{/if}}
+    </div>
+</div>
+
+{{#if sales.length}}
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h5>Total Sales</h5>
+                <h3>₹{{totalSales}}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h5>Total Orders</h5>
+                <h3>{{sales.length}}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+{{/if}}

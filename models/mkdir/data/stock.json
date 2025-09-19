@@ -1,0 +1,23 @@
+[
+  {
+    "id": "sugar",
+    "name": "Sugar",
+    "quantity": 100,
+    "unit": "bags",
+    "lastUpdated": "2025-09-14T18:55:08.000Z"
+  },
+  {
+    "id": "08da0237-e868-4f86-beea-a09d458d70f2",
+    "name": "Khava",
+    "quantity": 150,
+    "unit": "kg",
+    "lastUpdated": "2025-09-14T18:57:42.921Z"
+  },
+  {
+    "id": "d82b5b8b-d109-4326-b85d-f7865ea179a8",
+    "name": "sugar",
+    "quantity": 500,
+    "unit": "bags",
+    "lastUpdated": "2025-09-15T03:43:21.309Z"
+  }
+]

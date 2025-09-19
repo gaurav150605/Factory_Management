@@ -1,0 +1,168 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-user-plus me-2"></i>Add New Employee</h2>
+    <a href="/employees" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i>Back to Employees
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Employee Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/employees/add" class="needs-validation form-with-loading" novalidate>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">Full Name *</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                            <div class="invalid-feedback">
+                                Please enter employee name.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="role" class="form-label">Role/Position *</label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="">Select role</option>
+                                <option value="Manager">Manager</option>
+                                <option value="Production Supervisor">Production Supervisor</option>
+                                <option value="Quality Controller">Quality Controller</option>
+                                <option value="Sales Executive">Sales Executive</option>
+                                <option value="Accountant">Accountant</option>
+                                <option value="Worker">Worker</option>
+                                <option value="Helper">Helper</option>
+                                <option value="Driver">Driver</option>
+                                <option value="Security">Security</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a role.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" pattern="[0-9]{10}">
+                            <div class="invalid-feedback">
+                                Please enter a valid 10-digit phone number.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="basicSalary" class="form-label">Basic Salary (₹) *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control currency-input" id="basicSalary" name="basicSalary" 
+                                       step="0.01" min="0" required>
+                            </div>
+                            <div class="invalid-feedback">
+                                Please enter a valid salary amount.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="joiningDate" class="form-label">Joining Date *</label>
+                            <input type="date" class="form-control" id="joiningDate" name="joiningDate" required>
+                            <div class="invalid-feedback">
+                                Please select joining date.
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <textarea class="form-control" id="address" name="address" rows="3" 
+                                      placeholder="Employee address..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/employees" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Save Employee
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Role Guidelines</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6><i class="fas fa-info-circle text-info me-2"></i>Common Roles</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <span class="badge bg-primary me-2">Manager</span>
+                            Overall factory management
+                        </li>
+                        <li class="mb-2">
+                            <span class="badge bg-success me-2">Production</span>
+                            Pedha production supervision
+                        </li>
+                        <li class="mb-2">
+                            <span class="badge bg-warning me-2">Quality</span>
+                            Quality control and testing
+                        </li>
+                        <li class="mb-2">
+                            <span class="badge bg-info me-2">Sales</span>
+                            Customer relations and sales
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="mb-3">
+                    <h6><i class="fas fa-lightbulb text-warning me-2"></i>Tips</h6>
+                    <ul class="list-unstyled small">
+                        <li class="mb-1">• Set competitive salaries</li>
+                        <li class="mb-1">• Include contact information</li>
+                        <li class="mb-1">• Track joining dates</li>
+                        <li class="mb-1">• Regular performance reviews</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Salary Guidelines</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Manager</strong><br>
+                    <small class="text-muted">₹25,000 - ₹50,000</small>
+                </div>
+                <div class="mb-2">
+                    <strong>Supervisor</strong><br>
+                    <small class="text-muted">₹15,000 - ₹25,000</small>
+                </div>
+                <div class="mb-2">
+                    <strong>Worker</strong><br>
+                    <small class="text-muted">₹8,000 - ₹15,000</small>
+                </div>
+                <div class="mb-2">
+                    <strong>Helper</strong><br>
+                    <small class="text-muted">₹6,000 - ₹10,000</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set today's date as default joining date
+    const joiningDateInput = document.getElementById('joiningDate');
+    if (!joiningDateInput.value) {
+        joiningDateInput.value = new Date().toISOString().split('T')[0];
+    }
+});
+</script>
