@@ -36,10 +36,6 @@ const saleSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
-    customerEmail: {
-        type: String,
-        trim: true
-    },
     customerAddress: {
         type: String,
         trim: true

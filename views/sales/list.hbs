@@ -59,7 +59,11 @@
                                 <button class="btn btn-sm btn-outline-primary" onclick="generateInvoice('{{this._id}}')" title="Generate Invoice">
                                     <i class="fas fa-file-pdf"></i>
                                 </button>
+                                {{#if (eq this.type "multiple")}}
+                                <span class="text-muted small">Multi</span>
+                                {{else}}
                                 <span class="text-muted small">Simple</span>
+                                {{/if}}
                             </div>
                         </td>
                     </tr>

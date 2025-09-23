@@ -5,6 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const puppeteer = require('puppeteer');
 const mongoose = require('mongoose');
 const moment = require('moment');
+const session = require('express-session');
 
 // Import models
 const Employee = require('./models/Employee');
@@ -13,6 +14,7 @@ const Advance = require('./models/Advance');
 const Salary = require('./models/Salary');
 const Sale = require('./models/Sale');
 const SimpleSale = require('./models/SimpleSale');
+const User = require('./models/User');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -32,6 +34,17 @@ mongoose.connect('mongodb://localhost:27017/ramlila-pedhewale', {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+
+// Session middleware
+app.use(session({
+    secret: 'ramlila-pedhewale-secret-key-2024',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: false, // Set to true if using HTTPS
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
 
 // Set view engine to handlebars
 const hbs = require('express-handlebars');
@@ -105,10 +118,152 @@ const writeData = (filePath, data) => {
     }
 };
 
+// Authentication middleware
+const requireAuth = (req, res, next) => {
+    if (req.session.userId) {
+        next();
+    } else {
+        res.redirect('/auth/login');
+    }
+};
+
+// Make user data available to all views
+app.use((req, res, next) => {
+    res.locals.user = req.session.user || null;
+    next();
+});
+
 // Routes
 
+// Authentication Routes
+app.get('/auth/login', (req, res) => {
+    if (req.session.userId) {
+        return res.redirect('/');
+    }
+    res.render('auth/login', { title: 'Login', layout: false });
+});
+
+app.post('/auth/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        
+        const user = await User.findOne({ 
+            $or: [{ username }, { email: username }],
+            isActive: true 
+        });
+        
+        if (!user) {
+            return res.render('auth/login', { 
+                error: 'Invalid username or password',
+                title: 'Login',
+                layout: false
+            });
+        }
+        
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
+            return res.render('auth/login', { 
+                error: 'Invalid username or password',
+                title: 'Login',
+                layout: false
+            });
+        }
+        
+        // Update last login
+        user.lastLogin = new Date();
+        await user.save();
+        
+        // Set session
+        req.session.userId = user._id;
+        req.session.user = {
+            id: user._id,
+            username: user.username,
+            fullName: user.fullName,
+            email: user.email,
+            role: user.role
+        };
+        
+        res.redirect('/');
+    } catch (error) {
+        console.error('Login error:', error);
+        res.render('auth/login', { 
+            error: 'An error occurred during login',
+            title: 'Login',
+            layout: false
+        });
+    }
+});
+
+app.get('/auth/register', (req, res) => {
+    if (req.session.userId) {
+        return res.redirect('/');
+    }
+    res.render('auth/register', { title: 'Register', layout: false });
+});
+
+app.post('/auth/register', async (req, res) => {
+    try {
+        const { username, email, password, confirmPassword, fullName, role } = req.body;
+        
+        // Validation
+        if (password !== confirmPassword) {
+            return res.render('auth/register', { 
+                error: 'Passwords do not match',
+                title: 'Register',
+                layout: false
+            });
+        }
+        
+        // Check if user already exists
+        const existingUser = await User.findOne({
+            $or: [{ username }, { email }]
+        });
+        
+        if (existingUser) {
+            return res.render('auth/register', { 
+                error: 'Username or email already exists',
+                title: 'Register',
+                layout: false
+            });
+        }
+        
+        // Create new user
+        const user = new User({
+            username,
+            email,
+            password,
+            fullName,
+            role: role || 'employee'
+        });
+        
+        await user.save();
+        
+        res.render('auth/login', { 
+            success: 'Account created successfully! Please login.',
+            title: 'Login',
+            layout: false
+        });
+    } catch (error) {
+        console.error('Registration error:', error);
+        res.render('auth/register', { 
+            error: 'An error occurred during registration',
+            title: 'Register',
+            layout: false
+        });
+    }
+});
+
+app.post('/auth/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            console.error('Logout error:', err);
+        }
+        res.redirect('/auth/login');
+    });
+});
+
 // Dashboard
-app.get('/', (req, res) => {
+app.get('/', requireAuth, (req, res) => {
     res.render('dashboard', {
         title: 'Ramlila Pedhewale Factory',
         factoryName: 'Ramlila Pedhewale'
@@ -117,7 +272,7 @@ app.get('/', (req, res) => {
 
 // Sales Management Routes
 // Sales list - show both simple and multi-product sales
-app.get('/sales', async (req, res) => {
+app.get('/sales', requireAuth, async (req, res) => {
     try {
         const [simpleSales, multiSales] = await Promise.all([
             SimpleSale.find().sort({ createdAt: -1 }),
@@ -160,7 +315,7 @@ app.get('/sales', async (req, res) => {
 // Single-product sale routes have been removed
 
 // Stock Management Routes
-app.get('/stock', (req, res) => {
+app.get('/stock', requireAuth, (req, res) => {
     const stock = readData(STOCK_FILE);
     
     // Calculate stock levels
@@ -177,11 +332,11 @@ app.get('/stock', (req, res) => {
     });
 });
 
-app.get('/stock/add', (req, res) => {
+app.get('/stock/add', requireAuth, (req, res) => {
     res.render('stock/add', { title: 'Add Stock' });
 });
 
-app.post('/stock/add', (req, res) => {
+app.post('/stock/add', requireAuth, (req, res) => {
     const { name, quantity, unit } = req.body;
     
     const stockItem = {
@@ -202,7 +357,7 @@ app.post('/stock/add', (req, res) => {
     }
 });
 
-app.get('/stock/edit/:id', (req, res) => {
+app.get('/stock/edit/:id', requireAuth, (req, res) => {
     const stock = readData(STOCK_FILE);
     const stockItem = stock.find(s => s.id === req.params.id);
     
@@ -213,7 +368,7 @@ app.get('/stock/edit/:id', (req, res) => {
     res.render('stock/edit', { stockItem, title: 'Edit Stock' });
 });
 
-app.post('/stock/edit/:id', (req, res) => {
+app.post('/stock/edit/:id', requireAuth, (req, res) => {
     const { name, quantity, unit } = req.body;
     
     const stock = readData(STOCK_FILE);
@@ -238,7 +393,7 @@ app.post('/stock/edit/:id', (req, res) => {
     }
 });
 
-app.post('/stock/delete/:id', (req, res) => {
+app.post('/stock/delete/:id', requireAuth, (req, res) => {
     const stock = readData(STOCK_FILE);
     const filteredStock = stock.filter(s => s.id !== req.params.id);
     
@@ -250,7 +405,7 @@ app.post('/stock/delete/:id', (req, res) => {
 });
 
 // Product Management Routes
-app.get('/products', (req, res) => {
+app.get('/products', requireAuth, (req, res) => {
     const products = readData(PRODUCTS_FILE);
     
     // Calculate product statistics
@@ -268,11 +423,11 @@ app.get('/products', (req, res) => {
     });
 });
 
-app.get('/products/add', (req, res) => {
+app.get('/products/add', requireAuth, (req, res) => {
     res.render('products/add', { title: 'Add Product' });
 });
 
-app.post('/products/add', (req, res) => {
+app.post('/products/add', requireAuth, (req, res) => {
     const { name, price, unit, description } = req.body;
     
     const product = {
@@ -294,7 +449,7 @@ app.post('/products/add', (req, res) => {
     }
 });
 
-app.get('/products/edit/:id', (req, res) => {
+app.get('/products/edit/:id', requireAuth, (req, res) => {
     const products = readData(PRODUCTS_FILE);
     const product = products.find(p => p.id === req.params.id);
     
@@ -305,7 +460,7 @@ app.get('/products/edit/:id', (req, res) => {
     res.render('products/edit', { product, title: 'Edit Product' });
 });
 
-app.post('/products/edit/:id', (req, res) => {
+app.post('/products/edit/:id', requireAuth, (req, res) => {
     const { name, price, unit, description } = req.body;
     
     const products = readData(PRODUCTS_FILE);
@@ -331,7 +486,7 @@ app.post('/products/edit/:id', (req, res) => {
     }
 });
 
-app.post('/products/delete/:id', (req, res) => {
+app.post('/products/delete/:id', requireAuth, (req, res) => {
     const products = readData(PRODUCTS_FILE);
     const filteredProducts = products.filter(p => p.id !== req.params.id);
     
@@ -343,7 +498,7 @@ app.post('/products/delete/:id', (req, res) => {
 });
 
 // Invoice Generation
-app.post('/getInvoice', async (req, res) => {
+app.post('/getInvoice', requireAuth, async (req, res) => {
     const { saleId } = req.body;
     
     if (!saleId) {
@@ -368,10 +523,10 @@ app.post('/getInvoice', async (req, res) => {
             // Multiple product sale
             const itemsHTML = sale.items.map(item => `
                 <tr>
-                    <td>${item.productName}</td>
+                    <td>${item.productName || 'Product'}</td>
                     <td>${item.quantity} kg</td>
-                    <td>₹${item.price}</td>
-                    <td>₹${item.totalAmount}</td>
+                    <td>₹${item.price.toFixed(2)}</td>
+                    <td>₹${item.totalAmount.toFixed(2)}</td>
                 </tr>
             `).join('');
             
@@ -426,23 +581,23 @@ app.post('/getInvoice', async (req, res) => {
                 <div class="summary">
                     <div class="summary-row">
                         <span>Subtotal:</span>
-                        <span>₹${sale.subtotal}</span>
+                        <span>₹${sale.subtotal.toFixed(2)}</span>
                     </div>
                     ${sale.discount > 0 ? `
                     <div class="summary-row">
                         <span>Discount:</span>
-                        <span>-₹${sale.discount}</span>
+                        <span>-₹${sale.discount.toFixed(2)}</span>
                     </div>
                     ` : ''}
                     ${sale.tax > 0 ? `
                     <div class="summary-row">
                         <span>Tax:</span>
-                        <span>₹${sale.tax}</span>
+                        <span>₹${sale.tax.toFixed(2)}</span>
                     </div>
                     ` : ''}
                     <div class="summary-row total">
                         <span><strong>Total Amount:</strong></span>
-                        <span><strong>₹${sale.totalAmount}</strong></span>
+                        <span><strong>₹${sale.totalAmount.toFixed(2)}</strong></span>
                     </div>
                 </div>
                 
@@ -495,13 +650,13 @@ app.post('/getInvoice', async (req, res) => {
                     <tbody>
                         <tr>
                             <td>Sale</td>
-                            <td>₹${simple.amount}</td>
+                            <td>₹${simple.amount.toFixed(2)}</td>
                         </tr>
                     </tbody>
                 </table>
                 
                 <div class="total">
-                    <p>Total Amount: ₹${simple.amount}</p>
+                    <p>Total Amount: ₹${simple.amount.toFixed(2)}</p>
                 </div>
                 
                 <div class="footer">
@@ -532,10 +687,10 @@ app.post('/getInvoice', async (req, res) => {
 });
 
 // Reporting Routes
-app.get('/reports', async (req, res) => {
+app.get('/reports', requireAuth, async (req, res) => {
     const products = readData(PRODUCTS_FILE);
     const stock = readData(STOCK_FILE);
-
+    
     const simpleSales = await SimpleSale.find().sort({ createdAt: -1 });
     const totalSales = simpleSales.reduce((sum, s) => sum + s.amount, 0);
     const totalSalesCount = simpleSales.length;
@@ -547,7 +702,7 @@ app.get('/reports', async (req, res) => {
         quantity: 1,
         totalAmount: s.amount
     }));
-
+    
     res.render('reports/dashboard', {
         sales: recentSales,
         products,
@@ -565,22 +720,22 @@ app.get('/reports', async (req, res) => {
 
 // Multiple Product Sales Routes
 // Add sale (multi-product with add another product option)
-app.get('/sales/add-multiple', (req, res) => {
+app.get('/sales/add-multiple', requireAuth, (req, res) => {
     const products = readData(PRODUCTS_FILE);
     res.render('sales/add-multiple', { products, title: 'Add Sale' });
 });
 
-app.get('/sales/add', (req, res) => {
+app.get('/sales/add', requireAuth, (req, res) => {
     const products = readData(PRODUCTS_FILE);
     res.render('sales/add-multiple', { products, title: 'Add Sale' });
 });
 
-app.post('/sales/add', async (req, res) => {
+app.post('/sales/add', requireAuth, async (req, res) => {
     try {
-        const {
-            customerName,
-            customerPhone,
-            customerEmail,
+        const { 
+            customerName, 
+            customerPhone, 
+            customerEmail, 
             customerAddress,
             products,
             discount,
@@ -589,7 +744,7 @@ app.post('/sales/add', async (req, res) => {
             date,
             notes
         } = req.body;
-
+        
         // Normalize and compute items
         let normalized = [];
         if (Array.isArray(products)) {
@@ -620,7 +775,6 @@ app.post('/sales/add', async (req, res) => {
         const sale = new Sale({
             customerName,
             customerPhone,
-            customerEmail,
             customerAddress,
             items,
             subtotal,
@@ -640,7 +794,7 @@ app.post('/sales/add', async (req, res) => {
 });
 
 // Employee Management Routes
-app.get('/employees', async (req, res) => {
+app.get('/employees', requireAuth, async (req, res) => {
     try {
         const employees = await Employee.find({ isActive: true }).sort({ createdAt: -1 });
         
@@ -667,11 +821,11 @@ app.get('/employees', async (req, res) => {
     }
 });
 
-app.get('/employees/add', (req, res) => {
+app.get('/employees/add', requireAuth, (req, res) => {
     res.render('employees/add', { title: 'Add Employee' });
 });
 
-app.post('/employees/add', async (req, res) => {
+app.post('/employees/add', requireAuth, async (req, res) => {
     try {
         const { name, role, phone, basicSalary, joiningDate, address } = req.body;
         
@@ -692,7 +846,7 @@ app.post('/employees/add', async (req, res) => {
     }
 });
 
-app.get('/employees/edit/:id', async (req, res) => {
+app.get('/employees/edit/:id', requireAuth, async (req, res) => {
     try {
         const employee = await Employee.findById(req.params.id);
         if (!employee) {
@@ -706,7 +860,7 @@ app.get('/employees/edit/:id', async (req, res) => {
     }
 });
 
-app.post('/employees/edit/:id', async (req, res) => {
+app.post('/employees/edit/:id', requireAuth, async (req, res) => {
     try {
         const { name, role, phone, basicSalary, joiningDate, address } = req.body;
         
@@ -727,7 +881,7 @@ app.post('/employees/edit/:id', async (req, res) => {
     }
 });
 
-app.post('/employees/delete/:id', async (req, res) => {
+app.post('/employees/delete/:id', requireAuth, async (req, res) => {
     try {
         await Employee.findByIdAndUpdate(req.params.id, { isActive: false });
         res.redirect('/employees');
@@ -740,7 +894,7 @@ app.post('/employees/delete/:id', async (req, res) => {
 // Attendance and Advance features removed
 
 // Salary Management Routes
-app.get('/employees/salary', async (req, res) => {
+app.get('/employees/salary', requireAuth, async (req, res) => {
     try {
         const currentMonth = moment().month() + 1;
         const currentYear = moment().year();
@@ -771,7 +925,7 @@ app.get('/employees/salary', async (req, res) => {
     }
 });
 
-app.post('/employees/salary/calculate', async (req, res) => {
+app.post('/employees/salary/calculate', requireAuth, async (req, res) => {
     try {
         const { month, year } = req.body;
         const employees = await Employee.find({ isActive: true });
@@ -850,7 +1004,7 @@ app.post('/employees/salary/calculate', async (req, res) => {
 });
 
 // Individual Employee Salary Details Route
-app.get('/employees/salary/:id', async (req, res) => {
+app.get('/employees/salary/:id', requireAuth, async (req, res) => {
     try {
         const employee = await Employee.findById(req.params.id);
         if (!employee) {

@@ -1,0 +1,23 @@
+[
+  {
+    "id": "pedha-1",
+    "name": "Kesar Pedha",
+    "price": 200,
+    "unit": "kg",
+    "description": "Premium Kesar Pedha"
+  },
+  {
+    "id": "pedha-2",
+    "name": "Chocolate Pedha",
+    "price": 250,
+    "unit": "kg",
+    "description": "Delicious Chocolate Pedha"
+  },
+  {
+    "id": "pedha-3",
+    "name": "Plain Pedha",
+    "price": 180,
+    "unit": "kg",
+    "description": "Traditional Plain Pedha"
+  }
+]
