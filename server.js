@@ -6,6 +6,8 @@ const puppeteer = require('puppeteer');
 const mongoose = require('mongoose');
 const moment = require('moment');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
+
 
 // Import models
 const Employee = require('./models/Employee');
@@ -15,12 +17,12 @@ const Salary = require('./models/Salary');
 const Sale = require('./models/Sale');
 const SimpleSale = require('./models/SimpleSale');
 const User = require('./models/User');
-
+const dburl =process.env.URL;
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // MongoDB connection
-mongoose.connect('mongodb://localhost:27017/ramlila-pedhewale', {
+mongoose.connect(dburl ,{
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => {
@@ -35,9 +37,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
+const store=MongoStore.create({
+    mongoUrl:dburl,
+    crypto:{
+        secret:process.env.SECRET,
+    }
+})
+
 // Session middleware
 app.use(session({
-    secret: 'ramlila-pedhewale-secret-key-2024',
+    store,
+    secret: process.env.SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -626,7 +636,7 @@ app.post('/getInvoice', requireAuth, async (req, res) => {
                     .total { font-weight: bold; font-size: 18px; }
                     .footer { margin-top: 30px; text-align: center; color: #666; }
                 </style>
-            </head>
+            </head> 
             <body>
                 <div class="header">
                     <div class="company-name">Ramlila Pedhewale Factory</div>
