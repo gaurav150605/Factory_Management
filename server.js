@@ -510,7 +510,7 @@ app.post('/products/delete/:id', requireAuth, (req, res) => {
 
 // Invoice Generation
 app.post('/getInvoice', requireAuth, async (req, res) => {
-    const { saleId } = req.body;
+    const saleId = (req.body && req.body.saleId) || (req.query && req.query.saleId);
     
     if (!saleId) {
         return res.status(400).json({ error: 'Sale ID is required' });
@@ -525,21 +525,33 @@ app.post('/getInvoice', requireAuth, async (req, res) => {
             return res.status(404).json({ error: 'Sale not found' });
         }
         
-        const browser = await puppeteer.launch({ headless: "new" });
+        // Launch Puppeteer with flags that work on Render
+        const browser = await puppeteer.launch({
+            headless: 'new',
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined
+        });
         const page = await browser.newPage();
         
         let invoiceHTML;
         
         if (!simple && sale && sale.items && sale.items.length > 0) {
             // Multiple product sale
-            const itemsHTML = sale.items.map(item => `
+            const itemsHTML = sale.items.map(item => {
+                const itemName = item.productName || 'Product';
+                const qty = Number(item.quantity) || 0;
+                const price = Number(item.price) || 0;
+                const lineTotal = Number(item.totalAmount);
+                const safeLineTotal = Number.isFinite(lineTotal) ? lineTotal : (qty * price);
+                return `
                 <tr>
-                    <td>${item.productName || 'Product'}</td>
-                    <td>${item.quantity} kg</td>
-                    <td>₹${item.price.toFixed(2)}</td>
-                    <td>₹${item.totalAmount.toFixed(2)}</td>
+                    <td>${itemName}</td>
+                    <td>${qty} kg</td>
+                    <td>₹${price.toFixed(2)}</td>
+                    <td>₹${safeLineTotal.toFixed(2)}</td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
             
             invoiceHTML = `
             <!DOCTYPE html>
@@ -568,8 +580,8 @@ app.post('/getInvoice', requireAuth, async (req, res) => {
                 
                 <div class="invoice-details">
                     <h2>Invoice #${(sale._id || sale.id).toString().substring(0, 8)}</h2>
-                    <p><strong>Date:</strong> ${moment(sale.date).format('DD-MM-YYYY')}</p>
-                    <p><strong>Customer:</strong> ${sale.customerName}</p>
+                    <p><strong>Date:</strong> ${moment(sale.date || sale.createdAt || new Date()).format('DD-MM-YYYY')}</p>
+                    <p><strong>Customer:</strong> ${sale.customerName || 'Customer'}</p>
                     ${sale.customerPhone ? `<p><strong>Phone:</strong> ${sale.customerPhone}</p>` : ''}
                     ${sale.customerEmail ? `<p><strong>Email:</strong> ${sale.customerEmail}</p>` : ''}
                     ${sale.customerAddress ? `<p><strong>Address:</strong> ${sale.customerAddress}</p>` : ''}
@@ -592,23 +604,23 @@ app.post('/getInvoice', requireAuth, async (req, res) => {
                 <div class="summary">
                     <div class="summary-row">
                         <span>Subtotal:</span>
-                        <span>₹${sale.subtotal.toFixed(2)}</span>
+                        <span>₹${(Number(sale.subtotal) || 0).toFixed(2)}</span>
                     </div>
-                    ${sale.discount > 0 ? `
+                    ${(Number(sale.discount) || 0) > 0 ? `
                     <div class="summary-row">
                         <span>Discount:</span>
-                        <span>-₹${sale.discount.toFixed(2)}</span>
+                        <span>-₹${(Number(sale.discount) || 0).toFixed(2)}</span>
                     </div>
                     ` : ''}
-                    ${sale.tax > 0 ? `
+                    ${(Number(sale.tax) || 0) > 0 ? `
                     <div class="summary-row">
                         <span>Tax:</span>
-                        <span>₹${sale.tax.toFixed(2)}</span>
+                        <span>₹${(Number(sale.tax) || 0).toFixed(2)}</span>
                     </div>
                     ` : ''}
                     <div class="summary-row total">
                         <span><strong>Total Amount:</strong></span>
-                        <span><strong>₹${sale.totalAmount.toFixed(2)}</strong></span>
+                        <span><strong>₹${(Number(sale.totalAmount) || 0).toFixed(2)}</strong></span>
                     </div>
                 </div>
                 
@@ -637,7 +649,7 @@ app.post('/getInvoice', requireAuth, async (req, res) => {
                     .total { font-weight: bold; font-size: 18px; }
                     .footer { margin-top: 30px; text-align: center; color: #666; }
                 </style>
-            </head> 
+            </head>
             <body>
                 <div class="header">
                     <div class="company-name">Ramlila Pedhewale Factory</div>
@@ -646,8 +658,8 @@ app.post('/getInvoice', requireAuth, async (req, res) => {
                 
                 <div class="invoice-details">
                     <h2>Invoice #${simple._id.toString().substring(0, 8)}</h2>
-                    <p><strong>Date:</strong> ${moment(simple.date).format('DD-MM-YYYY')}</p>
-                    <p><strong>Customer:</strong> ${simple.customerName}</p>
+                    <p><strong>Date:</strong> ${moment(simple.date || simple.createdAt || new Date()).format('DD-MM-YYYY')}</p>
+                    <p><strong>Customer:</strong> ${simple.customerName || 'Customer'}</p>
                     ${simple.customerPhone ? `<p><strong>Phone:</strong> ${simple.customerPhone}</p>` : ''}
                 </div>
                 
@@ -661,13 +673,13 @@ app.post('/getInvoice', requireAuth, async (req, res) => {
                     <tbody>
                         <tr>
                             <td>Sale</td>
-                            <td>₹${simple.amount.toFixed(2)}</td>
+                            <td>₹${(Number(simple.amount) || 0).toFixed(2)}</td>
                         </tr>
                     </tbody>
                 </table>
                 
                 <div class="total">
-                    <p>Total Amount: ₹${simple.amount.toFixed(2)}</p>
+                    <p>Total Amount: ₹${(Number(simple.amount) || 0).toFixed(2)}</p>
                 </div>
                 
                 <div class="footer">
@@ -681,8 +693,9 @@ app.post('/getInvoice', requireAuth, async (req, res) => {
             return res.status(404).json({ error: 'Sale not found' });
         }
         
-        await page.setContent(invoiceHTML);
-        const pdf = await page.pdf({ format: 'A4', printBackground: true });
+        await page.setContent(invoiceHTML, { waitUntil: 'networkidle0' });
+        await page.emulateMediaType('screen');
+        const pdf = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
         
         await browser.close();
         
