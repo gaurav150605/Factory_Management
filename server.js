@@ -277,7 +277,7 @@ app.post('/auth/logout', (req, res) => {
 app.get('/', requireAuth, (req, res) => {
     res.render('dashboard', {
         title: 'Ramlila Pedhewale Factory',
-        factoryName: 'Ramlila Pedhewale'
+        factoryName: 'Ramlila Pedhewale-Bidakar'
     });
 });
 
@@ -509,7 +509,7 @@ app.post('/products/delete/:id', requireAuth, (req, res) => {
 });
 
 // Invoice Generation
-app.post('/getInvoice', requireAuth, async (req, res) => {
+const handleInvoice = async (req, res) => {
     const saleId = (req.body && req.body.saleId) || (req.query && req.query.saleId);
     
     if (!saleId) {
@@ -528,7 +528,7 @@ app.post('/getInvoice', requireAuth, async (req, res) => {
         // Launch Puppeteer with flags that work on Render
         const browser = await puppeteer.launch({
             headless: 'new',
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--single-process', '--no-zygote', '--disable-gpu'],
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined
         });
         const page = await browser.newPage();
@@ -708,7 +708,10 @@ app.post('/getInvoice', requireAuth, async (req, res) => {
         console.error('Error generating PDF:', error);
         res.status(500).json({ error: 'Failed to generate invoice' });
     }
-});
+};
+
+app.post('/getInvoice', requireAuth, handleInvoice);
+app.get('/getInvoice', requireAuth, handleInvoice);
 
 // Reporting Routes
 app.get('/reports', requireAuth, async (req, res) => {

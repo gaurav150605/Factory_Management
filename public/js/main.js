@@ -216,17 +216,6 @@ function showNotification(message, type = 'info') {
 
 // Invoice generation helper
 function generateInvoice(saleId) {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '/getInvoice';
-    
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'saleId';
-    input.value = saleId;
-    
-    form.appendChild(input);
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
+    const url = `/getInvoice?saleId=${encodeURIComponent(saleId)}`;
+    window.open(url, '_blank');
 }
