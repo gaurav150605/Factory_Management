@@ -216,6 +216,6 @@ function showNotification(message, type = 'info') {
 
 // Invoice generation helper
 function generateInvoice(saleId) {
-    const url = `/getInvoice?saleId=${encodeURIComponent(saleId)}`;
+    const url = `/sales/invoice/${encodeURIComponent(saleId)}`;
     window.open(url, '_blank');
 }

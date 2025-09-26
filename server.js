@@ -509,8 +509,24 @@ app.post('/products/delete/:id', requireAuth, (req, res) => {
 });
 
 // Invoice Generation
+const buildPuppeteerLaunchOptions = () => {
+    // Default options that work on Render
+    const commonArgs = ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'];
+    const isRender = !!process.env.RENDER;
+    const isWin = process.platform === 'win32';
+    const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH
+        || process.env.CHROMIUM_PATH
+        || (isWin ? 'C:/Program Files/Google/Chrome/Application/chrome.exe' : undefined);
+
+    return {
+        headless: 'new',
+        args: isRender ? [...commonArgs, '--single-process', '--no-zygote', '--disable-gpu'] : commonArgs,
+        executablePath: executablePath || undefined
+    };
+};
+
 const handleInvoice = async (req, res) => {
-    const saleId = (req.body && req.body.saleId) || (req.query && req.query.saleId);
+    const saleId = (req.params && req.params.id) || (req.body && req.body.saleId) || (req.query && req.query.saleId);
     
     if (!saleId) {
         return res.status(400).json({ error: 'Sale ID is required' });
@@ -525,13 +541,12 @@ const handleInvoice = async (req, res) => {
             return res.status(404).json({ error: 'Sale not found' });
         }
         
-        // Launch Puppeteer with flags that work on Render
-        const browser = await puppeteer.launch({
-            headless: 'new',
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--single-process', '--no-zygote', '--disable-gpu'],
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined
-        });
+        // Launch Puppeteer with environment-aware flags
+        const launchOptions = buildPuppeteerLaunchOptions();
+        const browser = await puppeteer.launch(launchOptions);
         const page = await browser.newPage();
+        page.setDefaultNavigationTimeout(60000);
+        page.setDefaultTimeout(60000);
         
         let invoiceHTML;
         
@@ -695,7 +710,7 @@ const handleInvoice = async (req, res) => {
         
         await page.setContent(invoiceHTML, { waitUntil: 'networkidle0' });
         await page.emulateMediaType('screen');
-        const pdf = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
+        const pdf = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true, margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' } });
         
         await browser.close();
         
@@ -712,6 +727,7 @@ const handleInvoice = async (req, res) => {
 
 app.post('/getInvoice', requireAuth, handleInvoice);
 app.get('/getInvoice', requireAuth, handleInvoice);
+app.get('/sales/invoice/:id', requireAuth, handleInvoice);
 
 // Reporting Routes
 app.get('/reports', requireAuth, async (req, res) => {
