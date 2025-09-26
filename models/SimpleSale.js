@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const simpleSaleSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        index: true
+    },
     customerName: {
         type: String,
         required: true,

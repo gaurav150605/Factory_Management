@@ -27,6 +27,11 @@ const saleItemSchema = new mongoose.Schema({
 });
 
 const saleSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        index: true
+    },
     customerName: {
         type: String,
         required: true,

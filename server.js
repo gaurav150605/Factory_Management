@@ -286,8 +286,8 @@ app.get('/', requireAuth, (req, res) => {
 app.get('/sales', requireAuth, async (req, res) => {
     try {
         const [simpleSales, multiSales] = await Promise.all([
-            SimpleSale.find().sort({ createdAt: -1 }),
-            Sale.find().sort({ createdAt: -1 })
+            SimpleSale.find({ userId: req.session.userId }).sort({ createdAt: -1 }),
+            Sale.find({ userId: req.session.userId }).sort({ createdAt: -1 })
         ]);
 
         const simpleMapped = simpleSales.map(s => ({
@@ -518,8 +518,8 @@ const handleInvoice = async (req, res) => {
     
     try {
         // Try simple sale first, then complex sale
-        let simple = await SimpleSale.findById(saleId);
-        let sale = simple || await Sale.findById(saleId);
+        let simple = await SimpleSale.findOne({ _id: saleId, userId: req.session.userId });
+        let sale = simple || await Sale.findOne({ _id: saleId, userId: req.session.userId });
         
         if (!sale) {
             return res.status(404).json({ error: 'Sale not found' });
@@ -718,7 +718,7 @@ app.get('/reports', requireAuth, async (req, res) => {
     const products = readData(PRODUCTS_FILE);
     const stock = readData(STOCK_FILE);
     
-    const simpleSales = await SimpleSale.find().sort({ createdAt: -1 });
+    const simpleSales = await SimpleSale.find({ userId: req.session.userId }).sort({ createdAt: -1 });
     const totalSales = simpleSales.reduce((sum, s) => sum + s.amount, 0);
     const totalSalesCount = simpleSales.length;
 
@@ -800,6 +800,7 @@ app.post('/sales/add', requireAuth, async (req, res) => {
         const totalAmount = Math.max(0, subtotal - disc + tx);
 
         const sale = new Sale({
+            userId: req.session.userId,
             customerName,
             customerPhone,
             customerAddress,
