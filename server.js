@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const puppeteer = require('puppeteer');
+const PDFDocument = require('pdfkit');
 const mongoose = require('mongoose');
 const moment = require('moment');
 const session = require('express-session');
@@ -277,7 +278,7 @@ app.post('/auth/logout', (req, res) => {
 app.get('/', requireAuth, (req, res) => {
     res.render('dashboard', {
         title: 'Ramlila Pedhewale Factory',
-        factoryName: 'Ramlila Pedhewale-Bidakar'
+        factoryName: 'Ramlila Pedhewale-Bidkar'
     });
 });
 
@@ -510,19 +511,14 @@ app.post('/products/delete/:id', requireAuth, (req, res) => {
 
 // Invoice Generation
 const buildPuppeteerLaunchOptions = () => {
-    // Default options that work on Render
+    // retained for fallback; not used by PDFKit path
     const commonArgs = ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'];
     const isRender = !!process.env.RENDER;
     const isWin = process.platform === 'win32';
     const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH
         || process.env.CHROMIUM_PATH
         || (isWin ? 'C:/Program Files/Google/Chrome/Application/chrome.exe' : undefined);
-
-    return {
-        headless: 'new',
-        args: isRender ? [...commonArgs, '--single-process', '--no-zygote', '--disable-gpu'] : commonArgs,
-        executablePath: executablePath || undefined
-    };
+    return { headless: 'new', args: isRender ? [...commonArgs, '--single-process', '--no-zygote', '--disable-gpu'] : commonArgs, executablePath: executablePath || undefined };
 };
 
 const handleInvoice = async (req, res) => {
@@ -541,183 +537,92 @@ const handleInvoice = async (req, res) => {
             return res.status(404).json({ error: 'Sale not found' });
         }
         
-        // Launch Puppeteer with environment-aware flags
-        const launchOptions = buildPuppeteerLaunchOptions();
-        const browser = await puppeteer.launch(launchOptions);
-        const page = await browser.newPage();
-        page.setDefaultNavigationTimeout(60000);
-        page.setDefaultTimeout(60000);
-        
-        let invoiceHTML;
-        
+        // Generate PDF with PDFKit (avoids headless browser issues)
+        const doc = new PDFDocument({ size: 'A4', margin: 40 });
+        const chunks = [];
+        doc.on('data', (chunk) => chunks.push(chunk));
+        doc.on('end', () => {
+            const pdf = Buffer.concat(chunks);
+            res.setHeader('Content-Type', 'application/pdf');
+            const code = (simple? simple._id : (sale._id || sale.id)).toString().substring(0,8);
+            res.setHeader('Content-Disposition', `attachment; filename="invoice-${code}.pdf"`);
+            res.send(pdf);
+        });
+
+        // Header
+        doc.fontSize(20).text('Ramlila Pedhewale Factory', { align: 'center' });
+        doc.moveDown(0.2);
+        doc.fontSize(10).fillColor('#555').text('Traditional Sweet Manufacturing', { align: 'center' });
+        doc.moveDown(1);
+        doc.fillColor('#000');
+
+        // Invoice meta
+        const invId = (simple? simple._id : (sale._id || sale.id)).toString().substring(0,8);
+        const invDate = moment((simple? simple.date : sale.date) || (simple? simple.createdAt : sale.createdAt) || new Date()).format('DD-MM-YYYY');
+        doc.fontSize(14).text(`Invoice #${invId}`);
+        doc.fontSize(10).text(`Date: ${invDate}`);
+        doc.moveDown(0.5);
+
+        // Customer
+        const customerName = (simple? simple.customerName : sale.customerName) || 'Customer';
+        const customerPhone = (simple? simple.customerPhone : sale.customerPhone) || '';
+        const customerAddress = sale && sale.customerAddress ? sale.customerAddress : '';
+        doc.fontSize(12).text(`Customer: ${customerName}`);
+        if (customerPhone) doc.text(`Phone: ${customerPhone}`);
+        if (customerAddress) doc.text(`Address: ${customerAddress}`);
+        doc.moveDown(1);
+
+        // Items/Amounts
         if (!simple && sale && sale.items && sale.items.length > 0) {
-            // Multiple product sale
-            const itemsHTML = sale.items.map(item => {
-                const itemName = item.productName || 'Product';
+            doc.fontSize(12).text('Items', { underline: true });
+            doc.moveDown(0.5);
+            doc.fontSize(10);
+            const headers = ['Product', 'Qty', 'Price', 'Total'];
+            const colX = [40, 260, 320, 400];
+            headers.forEach((h, i) => doc.text(h, colX[i], doc.y));
+            doc.moveDown(0.5);
+            sale.items.forEach((item) => {
+                const name = item.productName || 'Product';
                 const qty = Number(item.quantity) || 0;
                 const price = Number(item.price) || 0;
-                const lineTotal = Number(item.totalAmount);
-                const safeLineTotal = Number.isFinite(lineTotal) ? lineTotal : (qty * price);
-                return `
-                <tr>
-                    <td>${itemName}</td>
-                    <td>${qty} kg</td>
-                    <td>₹${price.toFixed(2)}</td>
-                    <td>₹${safeLineTotal.toFixed(2)}</td>
-                </tr>
-                `;
-            }).join('');
-            
-            invoiceHTML = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Invoice - ${sale._id || sale.id}</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
-                    .header { text-align: center; margin-bottom: 30px; }
-                    .company-name { font-size: 24px; font-weight: bold; color: #2c3e50; }
-                    .invoice-details { margin-bottom: 20px; }
-                    .invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                    .invoice-table th, .invoice-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                    .invoice-table th { background-color: #f2f2f2; }
-                    .total { font-weight: bold; font-size: 18px; }
-                    .footer { margin-top: 30px; text-align: center; color: #666; }
-                    .summary { margin-top: 20px; }
-                    .summary-row { display: flex; justify-content: space-between; margin: 5px 0; }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <div class="company-name">Ramlila Pedhewale Factory</div>
-                    <p>Traditional Sweet Manufacturing</p>
-                </div>
-                
-                <div class="invoice-details">
-                    <h2>Invoice #${(sale._id || sale.id).toString().substring(0, 8)}</h2>
-                    <p><strong>Date:</strong> ${moment(sale.date || sale.createdAt || new Date()).format('DD-MM-YYYY')}</p>
-                    <p><strong>Customer:</strong> ${sale.customerName || 'Customer'}</p>
-                    ${sale.customerPhone ? `<p><strong>Phone:</strong> ${sale.customerPhone}</p>` : ''}
-                    ${sale.customerEmail ? `<p><strong>Email:</strong> ${sale.customerEmail}</p>` : ''}
-                    ${sale.customerAddress ? `<p><strong>Address:</strong> ${sale.customerAddress}</p>` : ''}
-                </div>
-                
-                <table class="invoice-table">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>Quantity</th>
-                            <th>Unit Price</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${itemsHTML}
-                    </tbody>
-                </table>
-                
-                <div class="summary">
-                    <div class="summary-row">
-                        <span>Subtotal:</span>
-                        <span>₹${(Number(sale.subtotal) || 0).toFixed(2)}</span>
-                    </div>
-                    ${(Number(sale.discount) || 0) > 0 ? `
-                    <div class="summary-row">
-                        <span>Discount:</span>
-                        <span>-₹${(Number(sale.discount) || 0).toFixed(2)}</span>
-                    </div>
-                    ` : ''}
-                    ${(Number(sale.tax) || 0) > 0 ? `
-                    <div class="summary-row">
-                        <span>Tax:</span>
-                        <span>₹${(Number(sale.tax) || 0).toFixed(2)}</span>
-                    </div>
-                    ` : ''}
-                    <div class="summary-row total">
-                        <span><strong>Total Amount:</strong></span>
-                        <span><strong>₹${(Number(sale.totalAmount) || 0).toFixed(2)}</strong></span>
-                    </div>
-                </div>
-                
-                <div class="footer">
-                    <p>Thank you for your business!</p>
-                    <p>Ramlila Pedhewale Factory - Quality Sweets Since Generations</p>
-                </div>
-            </body>
-            </html>
-            `;
-        } else if (simple) {
-            // Simple sale invoice
-            invoiceHTML = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Invoice - ${simple._id}</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
-                    .header { text-align: center; margin-bottom: 30px; }
-                    .company-name { font-size: 24px; font-weight: bold; color: #2c3e50; }
-                    .invoice-details { margin-bottom: 20px; }
-                    .invoice-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                    .invoice-table th, .invoice-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                    .invoice-table th { background-color: #f2f2f2; }
-                    .total { font-weight: bold; font-size: 18px; }
-                    .footer { margin-top: 30px; text-align: center; color: #666; }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <div class="company-name">Ramlila Pedhewale Factory</div>
-                    <p>Traditional Sweet Manufacturing</p>
-                </div>
-                
-                <div class="invoice-details">
-                    <h2>Invoice #${simple._id.toString().substring(0, 8)}</h2>
-                    <p><strong>Date:</strong> ${moment(simple.date || simple.createdAt || new Date()).format('DD-MM-YYYY')}</p>
-                    <p><strong>Customer:</strong> ${simple.customerName || 'Customer'}</p>
-                    ${simple.customerPhone ? `<p><strong>Phone:</strong> ${simple.customerPhone}</p>` : ''}
-                </div>
-                
-                <table class="invoice-table">
-                    <thead>
-                        <tr>
-                            <th>Description</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Sale</td>
-                            <td>₹${(Number(simple.amount) || 0).toFixed(2)}</td>
-                        </tr>
-                    </tbody>
-                </table>
-                
-                <div class="total">
-                    <p>Total Amount: ₹${(Number(simple.amount) || 0).toFixed(2)}</p>
-                </div>
-                
-                <div class="footer">
-                    <p>Thank you for your business!</p>
-                    <p>Ramlila Pedhewale Factory - Quality Sweets Since Generations</p>
-                </div>
-            </body>
-            </html>
-            `;
+                const lineTotal = Number.isFinite(Number(item.totalAmount)) ? Number(item.totalAmount) : qty * price;
+                const y = doc.y;
+                doc.text(name, colX[0], y);
+                doc.text(`${qty} kg`, colX[1], y);
+                doc.text(`₹${price.toFixed(2)}`, colX[2], y);
+                doc.text(`₹${lineTotal.toFixed(2)}`, colX[3], y);
+                doc.moveDown(0.3);
+            });
+            doc.moveDown(0.5);
+
+            // Summary
+            const summaryX = 320;
+            const subtotal = Number(sale.subtotal) || 0;
+            const discount = Number(sale.discount) || 0;
+            const tax = Number(sale.tax) || 0;
+            const total = Number(sale.totalAmount) || Math.max(0, subtotal - discount + tax);
+            doc.text('Subtotal:', summaryX, doc.y);
+            doc.text(`₹${subtotal.toFixed(2)}`, summaryX + 80, doc.y);
+            if (discount > 0) { doc.text('Discount:', summaryX, doc.y); doc.text(`-₹${discount.toFixed(2)}`, summaryX + 80, doc.y); }
+            if (tax > 0) { doc.text('Tax:', summaryX, doc.y); doc.text(`₹${tax.toFixed(2)}`, summaryX + 80, doc.y); }
+            doc.fontSize(12).text('Total:', summaryX, doc.y + 10);
+            doc.fontSize(12).text(`₹${total.toFixed(2)}`, summaryX + 80, doc.y);
         } else {
-            return res.status(404).json({ error: 'Sale not found' });
+            const amt = Number(simple.amount) || 0;
+            doc.fontSize(12).text('Description', 40, doc.y, { underline: true });
+            doc.moveDown(0.5);
+            doc.fontSize(10).text('Sale', 40);
+            doc.moveDown(0.5);
+            doc.fontSize(12).text('Total');
+            doc.fontSize(12).text(`₹${amt.toFixed(2)}`);
         }
-        
-        await page.setContent(invoiceHTML, { waitUntil: 'networkidle0' });
-        await page.emulateMediaType('screen');
-        const pdf = await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true, margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' } });
-        
-        await browser.close();
-        
-        res.setHeader('Content-Type', 'application/pdf');
-        const code = (simple? simple._id : (sale._id || sale.id)).toString().substring(0,8);
-        res.setHeader('Content-Disposition', `attachment; filename="invoice-${code}.pdf"`);
-        res.send(pdf);
+
+        // Footer
+        doc.moveDown(2);
+        doc.fontSize(10).fillColor('#555').text('Thank you for your business!', { align: 'center' });
+        doc.fontSize(9).text('Ramlila Pedhewale Factory - Quality Sweets Since Generations', { align: 'center' });
+
+        doc.end();
         
     } catch (error) {
         console.error('Error generating PDF:', error);
