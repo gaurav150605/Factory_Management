@@ -572,49 +572,152 @@ const handleInvoice = async (req, res) => {
         if (customerAddress) doc.text(`Address: ${customerAddress}`);
         doc.moveDown(1);
 
-        // Items/Amounts
+        // Items/Amounts with proper table layout
         if (!simple && sale && sale.items && sale.items.length > 0) {
-            doc.fontSize(12).text('Items', { underline: true });
-            doc.moveDown(0.5);
+            const tableTop = doc.y + 5;
+            const colX = [40, 260, 320, 420];
+            const colW = [220, 60, 100, 120];
+            const rowH = 22;
+
+            // Header background
+            doc.save();
+            doc.rect(colX[0], tableTop, colW[0] + colW[1] + colW[2] + colW[3], rowH).fill('#F2F2F2');
+            doc.restore();
+
+            // Header text
+            doc.fontSize(11).fillColor('#000');
+            doc.text('Product', colX[0] + 6, tableTop + 6);
+            doc.text('Qty', colX[1] + 6, tableTop + 6);
+            doc.text('Unit Price', colX[2] + 6, tableTop + 6);
+            doc.text('Line Total', colX[3] + 6, tableTop + 6);
+
+            // Header border
+            doc.moveTo(colX[0], tableTop)
+               .lineTo(colX[0] + colW[0] + colW[1] + colW[2] + colW[3], tableTop)
+               .stroke();
+            doc.moveTo(colX[0], tableTop + rowH)
+               .lineTo(colX[0] + colW[0] + colW[1] + colW[2] + colW[3], tableTop + rowH)
+               .stroke();
+
+            // Vertical header lines
+            let xAcc = colX[0];
+            [colW[0], colW[1], colW[2], colW[3]].forEach((w) => {
+                doc.moveTo(xAcc, tableTop)
+                   .lineTo(xAcc, tableTop + rowH)
+                   .stroke();
+                xAcc += w;
+            });
+            // Right-most line
+            doc.moveTo(colX[0] + colW[0] + colW[1] + colW[2] + colW[3], tableTop)
+               .lineTo(colX[0] + colW[0] + colW[1] + colW[2] + colW[3], tableTop + rowH)
+               .stroke();
+
+            // Rows
+            let y = tableTop + rowH;
             doc.fontSize(10);
-            const headers = ['Product', 'Qty', 'Price', 'Total'];
-            const colX = [40, 260, 320, 400];
-            headers.forEach((h, i) => doc.text(h, colX[i], doc.y));
-            doc.moveDown(0.5);
             sale.items.forEach((item) => {
                 const name = item.productName || 'Product';
                 const qty = Number(item.quantity) || 0;
                 const price = Number(item.price) || 0;
                 const lineTotal = Number.isFinite(Number(item.totalAmount)) ? Number(item.totalAmount) : qty * price;
-                const y = doc.y;
-                doc.text(name, colX[0], y);
-                doc.text(`${qty} kg`, colX[1], y);
-                doc.text(`₹${price.toFixed(2)}`, colX[2], y);
-                doc.text(`₹${lineTotal.toFixed(2)}`, colX[3], y);
-                doc.moveDown(0.3);
-            });
-            doc.moveDown(0.5);
 
-            // Summary
-            const summaryX = 320;
+                // Row border top
+                doc.moveTo(colX[0], y)
+                   .lineTo(colX[0] + colW[0] + colW[1] + colW[2] + colW[3], y)
+                   .stroke();
+
+                // Text
+                doc.text(name, colX[0] + 6, y + 6, { width: colW[0] - 12 });
+                doc.text(`${qty} kg`, colX[1] + 6, y + 6, { width: colW[1] - 12 });
+                doc.text(`₹${price.toFixed(2)}`, colX[2] + 6, y + 6, { width: colW[2] - 12, align: 'right' });
+                doc.text(`₹${lineTotal.toFixed(2)}`, colX[3] + 6, y + 6, { width: colW[3] - 12, align: 'right' });
+
+                // Vertical lines for row
+                let x = colX[0];
+                [colW[0], colW[1], colW[2], colW[3]].forEach((w) => {
+                    doc.moveTo(x, y)
+                       .lineTo(x, y + rowH)
+                       .stroke();
+                    x += w;
+                });
+                // Right-most line
+                doc.moveTo(colX[0] + colW[0] + colW[1] + colW[2] + colW[3], y)
+                   .lineTo(colX[0] + colW[0] + colW[1] + colW[2] + colW[3], y + rowH)
+                   .stroke();
+
+                y += rowH;
+            });
+
+            // Bottom border
+            doc.moveTo(colX[0], y)
+               .lineTo(colX[0] + colW[0] + colW[1] + colW[2] + colW[3], y)
+               .stroke();
+
+            doc.moveDown(1.2);
+
+            // Summary box (right aligned)
             const subtotal = Number(sale.subtotal) || 0;
             const discount = Number(sale.discount) || 0;
             const tax = Number(sale.tax) || 0;
             const total = Number(sale.totalAmount) || Math.max(0, subtotal - discount + tax);
-            doc.text('Subtotal:', summaryX, doc.y);
-            doc.text(`₹${subtotal.toFixed(2)}`, summaryX + 80, doc.y);
-            if (discount > 0) { doc.text('Discount:', summaryX, doc.y); doc.text(`-₹${discount.toFixed(2)}`, summaryX + 80, doc.y); }
-            if (tax > 0) { doc.text('Tax:', summaryX, doc.y); doc.text(`₹${tax.toFixed(2)}`, summaryX + 80, doc.y); }
-            doc.fontSize(12).text('Total:', summaryX, doc.y + 10);
-            doc.fontSize(12).text(`₹${total.toFixed(2)}`, summaryX + 80, doc.y);
+
+            const boxW = 240;
+            const boxX = 400;
+            let boxY = y + 10;
+            const lineGap = 18;
+            doc.fontSize(11);
+            doc.text('Subtotal:', boxX, boxY, { width: 120, align: 'left' });
+            doc.text(`₹${subtotal.toFixed(2)}`, boxX + 120, boxY, { width: 120, align: 'right' });
+            boxY += lineGap;
+            if (discount > 0) {
+                doc.text('Discount:', boxX, boxY, { width: 120, align: 'left' });
+                doc.text(`-₹${discount.toFixed(2)}`, boxX + 120, boxY, { width: 120, align: 'right' });
+                boxY += lineGap;
+            }
+            if (tax > 0) {
+                doc.text('Tax:', boxX, boxY, { width: 120, align: 'left' });
+                doc.text(`₹${tax.toFixed(2)}`, boxX + 120, boxY, { width: 120, align: 'right' });
+                boxY += lineGap;
+            }
+            doc.fontSize(12).text('Total:', boxX, boxY + 4, { width: 120, align: 'left' });
+            doc.fontSize(12).text(`₹${total.toFixed(2)}`, boxX + 120, boxY + 4, { width: 120, align: 'right' });
         } else {
             const amt = Number(simple.amount) || 0;
-            doc.fontSize(12).text('Description', 40, doc.y, { underline: true });
-            doc.moveDown(0.5);
-            doc.fontSize(10).text('Sale', 40);
-            doc.moveDown(0.5);
-            doc.fontSize(12).text('Total');
-            doc.fontSize(12).text(`₹${amt.toFixed(2)}`);
+
+            const tableTop = doc.y + 5;
+            const colX = [40, 360];
+            const colW = [320, 180];
+            const rowH = 22;
+
+            // Header background
+            doc.save();
+            doc.rect(colX[0], tableTop, colW[0] + colW[1], rowH).fill('#F2F2F2');
+            doc.restore();
+
+            // Header
+            doc.fontSize(11).fillColor('#000');
+            doc.text('Description', colX[0] + 6, tableTop + 6);
+            doc.text('Amount', colX[1] + 6, tableTop + 6, { width: colW[1] - 12, align: 'right' });
+
+            // Borders
+            doc.moveTo(colX[0], tableTop).lineTo(colX[0] + colW[0] + colW[1], tableTop).stroke();
+            doc.moveTo(colX[0], tableTop + rowH).lineTo(colX[0] + colW[0] + colW[1], tableTop + rowH).stroke();
+            doc.moveTo(colX[0], tableTop).lineTo(colX[0], tableTop + rowH).stroke();
+            doc.moveTo(colX[0] + colW[0], tableTop).lineTo(colX[0] + colW[0], tableTop + rowH).stroke();
+            doc.moveTo(colX[0] + colW[0] + colW[1], tableTop).lineTo(colX[0] + colW[0] + colW[1], tableTop + rowH).stroke();
+
+            // Row
+            const y = tableTop + rowH;
+            doc.moveTo(colX[0], y).lineTo(colX[0] + colW[0] + colW[1], y).stroke();
+            doc.text('Sale', colX[0] + 6, y + 6);
+            doc.text(`₹${amt.toFixed(2)}`, colX[1] + 6, y + 6, { width: colW[1] - 12, align: 'right' });
+            // Bottom border
+            doc.moveTo(colX[0], y + rowH).lineTo(colX[0] + colW[0] + colW[1], y + rowH).stroke();
+
+            // Total bold line
+            doc.moveDown(1.2);
+            doc.fontSize(12).text('Total:', colX[1] - 80, y + rowH + 10, { width: 80, align: 'left' });
+            doc.fontSize(12).text(`₹${amt.toFixed(2)}`, colX[1], y + rowH + 10, { width: colW[1], align: 'right' });
         }
 
         // Footer
