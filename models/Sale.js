@@ -32,6 +32,10 @@ const saleSchema = new mongoose.Schema({
         ref: 'User',
         index: true
     },
+    invoiceNumber: {
+        type: Number,
+        index: true
+    },
     customerName: {
         type: String,
         required: true,

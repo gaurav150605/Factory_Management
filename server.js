@@ -550,14 +550,14 @@ const handleInvoice = async (req, res) => {
         });
 
         // Header
-        doc.fontSize(20).text('Ramlila Pedhewale Factory', { align: 'center' });
+        doc.fontSize(22).text('Ramlila Pedhewale Factory', { align: 'center' });
         doc.moveDown(0.2);
         doc.fontSize(10).fillColor('#555').text('Traditional Sweet Manufacturing', { align: 'center' });
         doc.moveDown(1);
         doc.fillColor('#000');
 
         // Invoice meta
-        const invId = (simple? simple._id : (sale._id || sale.id)).toString().substring(0,8);
+        const invId = simple ? (simple.invoiceNumber || 1) : (sale.invoiceNumber || 1);
         const invDate = moment((simple? simple.date : sale.date) || (simple? simple.createdAt : sale.createdAt) || new Date()).format('DD-MM-YYYY');
         doc.fontSize(14).text(`Invoice #${invId}`);
         doc.fontSize(10).text(`Date: ${invDate}`);
@@ -629,8 +629,8 @@ const handleInvoice = async (req, res) => {
                 // Text
                 doc.text(name, colX[0] + 6, y + 6, { width: colW[0] - 12 });
                 doc.text(`${qty} kg`, colX[1] + 6, y + 6, { width: colW[1] - 12 });
-                doc.text(`₹${price.toFixed(2)}`, colX[2] + 6, y + 6, { width: colW[2] - 12, align: 'right' });
-                doc.text(`₹${lineTotal.toFixed(2)}`, colX[3] + 6, y + 6, { width: colW[3] - 12, align: 'right' });
+                doc.text(`${price.toFixed(2)}`, colX[2] + 6, y + 6, { width: colW[2] - 12, align: 'right' });
+                doc.text(`${lineTotal.toFixed(2)}`, colX[3] + 6, y + 6, { width: colW[3] - 12, align: 'right' });
 
                 // Vertical lines for row
                 let x = colX[0];
@@ -667,20 +667,20 @@ const handleInvoice = async (req, res) => {
             const lineGap = 18;
             doc.fontSize(11);
             doc.text('Subtotal:', boxX, boxY, { width: 120, align: 'left' });
-            doc.text(`₹${subtotal.toFixed(2)}`, boxX + 120, boxY, { width: 120, align: 'right' });
+            doc.text(`${subtotal.toFixed(2)}`, boxX + 120, boxY, { width: 120, align: 'right' });
             boxY += lineGap;
             if (discount > 0) {
                 doc.text('Discount:', boxX, boxY, { width: 120, align: 'left' });
-                doc.text(`-₹${discount.toFixed(2)}`, boxX + 120, boxY, { width: 120, align: 'right' });
+                doc.text(`-${discount.toFixed(2)}`, boxX + 120, boxY, { width: 120, align: 'right' });
                 boxY += lineGap;
             }
             if (tax > 0) {
                 doc.text('Tax:', boxX, boxY, { width: 120, align: 'left' });
-                doc.text(`₹${tax.toFixed(2)}`, boxX + 120, boxY, { width: 120, align: 'right' });
+                doc.text(`${tax.toFixed(2)}`, boxX + 120, boxY, { width: 120, align: 'right' });
                 boxY += lineGap;
             }
             doc.fontSize(12).text('Total:', boxX, boxY + 4, { width: 120, align: 'left' });
-            doc.fontSize(12).text(`₹${total.toFixed(2)}`, boxX + 120, boxY + 4, { width: 120, align: 'right' });
+            doc.fontSize(12).text(`${total.toFixed(2)}`, boxX + 120, boxY + 4, { width: 120, align: 'right' });
         } else {
             const amt = Number(simple.amount) || 0;
 
@@ -710,17 +710,17 @@ const handleInvoice = async (req, res) => {
             const y = tableTop + rowH;
             doc.moveTo(colX[0], y).lineTo(colX[0] + colW[0] + colW[1], y).stroke();
             doc.text('Sale', colX[0] + 6, y + 6);
-            doc.text(`₹${amt.toFixed(2)}`, colX[1] + 6, y + 6, { width: colW[1] - 12, align: 'right' });
+            doc.text(`${amt.toFixed(2)}`, colX[1] + 6, y + 6, { width: colW[1] - 12, align: 'right' });
             // Bottom border
             doc.moveTo(colX[0], y + rowH).lineTo(colX[0] + colW[0] + colW[1], y + rowH).stroke();
 
             // Total bold line
             doc.moveDown(1.2);
             doc.fontSize(12).text('Total:', colX[1] - 80, y + rowH + 10, { width: 80, align: 'left' });
-            doc.fontSize(12).text(`₹${amt.toFixed(2)}`, colX[1], y + rowH + 10, { width: colW[1], align: 'right' });
+            doc.fontSize(12).text(`${amt.toFixed(2)}`, colX[1], y + rowH + 10, { width: colW[1], align: 'right' });
         }
 
-        // Footer
+        // Footer (single centered, nothing at right side)
         doc.moveDown(2);
         doc.fontSize(10).fillColor('#555').text('Thank you for your business!', { align: 'center' });
         doc.fontSize(9).text('Ramlila Pedhewale Factory - Quality Sweets Since Generations', { align: 'center' });
@@ -823,8 +823,13 @@ app.post('/sales/add', requireAuth, async (req, res) => {
         const tx = parseFloat(tax) || 0;
         const totalAmount = Math.max(0, subtotal - disc + tx);
 
+        // Compute next invoice number per user (starting at 1)
+        const lastSale = await Sale.findOne({ userId: req.session.userId }).sort({ invoiceNumber: -1 });
+        const nextInvoiceNumber = lastSale && lastSale.invoiceNumber ? lastSale.invoiceNumber + 1 : 1;
+
         const sale = new Sale({
             userId: req.session.userId,
+            invoiceNumber: nextInvoiceNumber,
             customerName,
             customerPhone,
             customerAddress,
